@@ -1,13 +1,26 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Header from './Header';
 import TouchNavigation from './TouchNavigation';
 import OverviewSection from './OverviewSection';
 import BasinVisualization from './BasinVisualization';
 import StatusPanel from './StatusPanel';
 import SystemStatus from './SystemStatus';
+import FingerprintModal from './FingerprintModal';
 
 const Dashboard = () => {
+  const [showFingerprintModal, setShowFingerprintModal] = useState(false);
+
+  // Visa modalen automatiskt när komponenten laddas
+  useEffect(() => {
+    setShowFingerprintModal(true);
+  }, []);
+
+  const handleCloseModal = () => {
+    setShowFingerprintModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a1a2a] via-[#1a2332] to-[#0f1419] relative overflow-hidden">
       {/* Bakgrundseffekter */}
@@ -47,6 +60,12 @@ const Dashboard = () => {
 
       {/* System Status (fast positionerad) */}
       <SystemStatus />
+
+      {/* Fingerprint Modal */}
+      <FingerprintModal 
+        isOpen={showFingerprintModal} 
+        onClose={handleCloseModal} 
+      />
 
       {/* Ytterligare visuella effekter */}
       <div className="fixed inset-0 pointer-events-none z-0">
