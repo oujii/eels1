@@ -7,8 +7,6 @@ import ReactFlow, {
   Panel,
   useNodesState,
   useEdgesState,
-  MiniMap,
-  Controls,
   Background,
   BackgroundVariant,
 } from 'reactflow';
@@ -311,19 +309,6 @@ const BasinFlowDiagram = () => {
           gap={20} 
           size={1} 
           color="#374151" 
-        />
-        <Controls className="bg-slate-800/80 border border-slate-600" />
-        <MiniMap 
-          className="bg-slate-800/80 border border-slate-600" 
-          nodeColor={(node) => {
-            switch (node.type) {
-              case 'basin': return '#3b82f6';
-              case 'pump': return '#10b981';
-              case 'filter': return '#8b5cf6';
-              case 'system': return '#f59e0b';
-              default: return '#6b7280';
-            }
-          }}
         />
         <Panel position="top-left" className="bg-slate-800/90 p-3 rounded-lg border border-slate-600">
           <h3 className="text-white font-semibold mb-2">Systemöversikt</h3>

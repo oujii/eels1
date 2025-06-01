@@ -8,9 +8,11 @@ import BasinVisualization from './BasinVisualization';
 import StatusPanel from './StatusPanel';
 import SystemStatus from './SystemStatus';
 import FingerprintModal from './FingerprintModal';
+import FeedingPanel from './FeedingPanel';
 
 const Dashboard = () => {
   const [showFingerprintModal, setShowFingerprintModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Visa modalen automatiskt när komponenten laddas
   useEffect(() => {
@@ -19,6 +21,47 @@ const Dashboard = () => {
 
   const handleCloseModal = () => {
     setShowFingerprintModal(false);
+  };
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+  };
+
+  const renderMainContent = () => {
+    switch (activeTab) {
+      case 'matning':
+        return (
+          <div className="max-w-[3840px] mx-auto">
+            <div className="grid grid-cols-12 gap-4 h-[calc(100vh-320px)]">
+              <div className="col-span-12">
+                <FeedingPanel />
+              </div>
+            </div>
+          </div>
+        );
+      case 'dashboard':
+      default:
+        return (
+          <div className="max-w-[3840px] mx-auto">
+            <div className="grid grid-cols-12 gap-4 h-[calc(100vh-320px)]">
+              {/* Vänster kolumn - Översikt och nödstopp */}
+              <div className="col-span-3 overflow-y-auto scrollbar-thin scrollbar-thumb-accent/20 scrollbar-track-transparent">
+                <OverviewSection />
+              </div>
+
+              {/* Mitten - Bassäng visualisering (2 kolumner) */}
+              <div className="col-span-6">
+                <BasinVisualization />
+              </div>
+
+              {/* Höger kolumn - Status och mätningar */}
+              <div className="col-span-3 overflow-y-auto scrollbar-thin scrollbar-thumb-accent/20 scrollbar-track-transparent">
+                <StatusPanel />
+              </div>
+            </div>
+          </div>
+        );
+    }
   };
 
   return (
@@ -34,28 +77,11 @@ const Dashboard = () => {
       <Header />
 
       {/* Touch Navigation */}
-      <TouchNavigation />
+      <TouchNavigation activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Main Content */}
-      <main className="pt-76 pb-8 px-8 relative z-10">
-        <div className="max-w-[3840px] mx-auto">
-          <div className="grid grid-cols-12 gap-8 h-[calc(100vh-280px)]">
-            {/* Vänster kolumn - Översikt och nödstopp */}
-            <div className="col-span-3">
-              <OverviewSection />
-            </div>
-
-            {/* Mitten - Bassäng visualisering (2 kolumner) */}
-            <div className="col-span-6">
-              <BasinVisualization />
-            </div>
-
-            {/* Höger kolumn - Status och mätningar */}
-            <div className="col-span-3">
-              <StatusPanel />
-            </div>
-          </div>
-        </div>
+      <main className="pt-56 pb-20 px-4 relative z-10">
+        {renderMainContent()}
       </main>
 
       {/* System Status (fast positionerad) */}

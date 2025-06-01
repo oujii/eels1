@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import { 
   HomeIcon, 
   BeakerIcon, 
@@ -30,8 +30,12 @@ const navItems: NavItem[] = [
   { id: 'profil', label: 'Profil', icon: UserIcon }
 ];
 
-const TouchNavigation = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+interface TouchNavigationProps {
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+}
+
+const TouchNavigation = ({ activeTab, onTabChange }: TouchNavigationProps) => {
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -64,7 +68,7 @@ const TouchNavigation = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => onTabChange(item.id)}
                 className={`
                   relative touch-target flex flex-col items-center justify-center
                   px-4 py-6 rounded-xl transition-all duration-300

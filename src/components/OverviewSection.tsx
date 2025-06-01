@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import FeedingPanel from './FeedingPanel';
 
 interface CircularProgressProps {
   percentage: number;
@@ -108,9 +107,6 @@ const OverviewSection = () => {
           </div>
         </div>
       </div>
-
-      {/* Matningskontroll */}
-      <FeedingPanel />
 
       {/* Nödstoppspanel */}
       <div className="glass rounded-2xl p-6 border-2 border-error/50">

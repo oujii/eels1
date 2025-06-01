@@ -21,7 +21,7 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-border: var(--border);
-  --font-sans: 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Work Sans', system-ui, sans-serif;
   --font-mono: 'Consolas', 'Monaco', monospace;
 }
 
@@ -118,4 +118,35 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--secondary);
+}
+
+/* Tailwind scrollbar utilities */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-accent\/20 {
+  scrollbar-color: rgba(127, 191, 255, 0.2) transparent;
+}
+
+.scrollbar-track-transparent {
+  scrollbar-color: transparent transparent;
+}
+
+/* Webkit scrollbar for thin variant */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(127, 191, 255, 0.2);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(127, 191, 255, 0.4);
 }
