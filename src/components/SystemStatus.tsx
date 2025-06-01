@@ -1,0 +1,161 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+
+const SystemStatus = () => {
+  const [uptime, setUptime] = useState({ hours: 72, minutes: 14, seconds: 0 });
+  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'connecting'>('online');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setUptime(prev => {
+        let newSeconds = prev.seconds + 1;
+        let newMinutes = prev.minutes;
+        let newHours = prev.hours;
+
+        if (newSeconds >= 60) {
+          newSeconds = 0;
+          newMinutes += 1;
+        }
+        if (newMinutes >= 60) {
+          newMinutes = 0;
+          newHours += 1;
+        }
+
+        return { hours: newHours, minutes: newMinutes, seconds: newSeconds };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusColor = () => {
+    switch (connectionStatus) {
+      case 'online': return 'text-success';
+      case 'offline': return 'text-error';
+      case 'connecting': return 'text-warning';
+      default: return 'text-secondary';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (connectionStatus) {
+      case 'online':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'offline':
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'connecting':
+        return (
+          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        );
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50">
+      <div className="glass rounded-xl p-4 glow-border min-w-[280px]">
+        <div className="space-y-3">
+          {/* System Status */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">System Status</span>
+            <div className={`flex items-center space-x-2 ${getStatusColor()}`}>
+              {getStatusIcon()}
+              <span className="text-sm font-semibold uppercase">
+                {connectionStatus === 'online' ? 'ONLINE' : 
+                 connectionStatus === 'offline' ? 'OFFLINE' : 'ANSLUTER'}
+              </span>
+            </div>
+          </div>
+
+          {/* Uptime */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">Drifttid</span>
+            <div className="flex items-center space-x-1">
+              <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12,6 12,12 16,14"></polyline>
+              </svg>
+              <span className="text-sm font-mono text-accent">
+                {uptime.hours}h {uptime.minutes.toString().padStart(2, '0')}m
+              </span>
+            </div>
+          </div>
+
+          {/* Version */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">Version</span>
+            <div className="flex items-center space-x-1">
+              <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
+              </svg>
+              <span className="text-sm font-mono text-secondary">2025.5.31</span>
+            </div>
+          </div>
+
+          {/* Aktiva Bassänger */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">Aktiva Bassänger</span>
+            <div className="flex items-center space-x-1">
+              <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span className="text-sm font-mono text-success font-semibold">6/6</span>
+            </div>
+          </div>
+
+          {/* CPU & Memory */}
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-secondary">CPU</span>
+              <span className="text-xs font-mono text-accent">23%</span>
+            </div>
+            <div className="h-1 bg-gray-700 rounded-full overflow-hidden mb-2">
+              <div className="h-full bg-gradient-to-r from-accent to-success w-1/4 rounded-full shimmer"></div>
+            </div>
+            
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-secondary">Minne</span>
+              <span className="text-xs font-mono text-accent">67%</span>
+            </div>
+            <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-accent to-warning w-2/3 rounded-full shimmer"></div>
+            </div>
+          </div>
+
+          {/* Network Status */}
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-secondary">Nätverksstatus</span>
+              <div className="flex items-center space-x-1">
+                <div className="flex space-x-1">
+                  {[...Array(4)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-1 h-3 rounded-full ${
+                        i < 3 ? 'bg-success' : 'bg-gray-600'
+                      }`}
+                      style={{ height: `${(i + 1) * 3}px` }}
+                    ></div>
+                  ))}
+                </div>
+                <span className="text-xs font-mono text-success">Stark</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SystemStatus;
