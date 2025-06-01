@@ -22,7 +22,7 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass glow-border">
+    <header className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="flex items-center justify-between px-8 py-4">
         {/* Logo och titel */}
         <div className="flex items-center space-x-4">

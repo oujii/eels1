@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import React, { useState, useRef, useCallback } from 'react';
+import BasinFlowDiagram from './BasinFlowDiagram';
 
 const BasinVisualization = () => {
   const [cranePosition, setCranePosition] = useState({ x: 50, y: 50 });
   const [isFeeding, setIsFeeding] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const joystickRef = useRef<HTMLDivElement>(null);
 
   const moveCrane = (direction: 'up' | 'down' | 'left' | 'right') => {
     setCranePosition(prev => {
@@ -25,173 +27,154 @@ const BasinVisualization = () => {
     });
   };
 
+  const handleJoystickMove = useCallback((clientX: number, clientY: number) => {
+    if (!joystickRef.current) return;
+    
+    const rect = joystickRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const deltaX = clientX - centerX;
+    const deltaY = clientY - centerY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const maxDistance = rect.width / 2;
+    
+    if (distance > 10) { // Dead zone
+      const normalizedX = deltaX / maxDistance;
+      const normalizedY = deltaY / maxDistance;
+      
+      setCranePosition(prev => ({
+        x: Math.max(0, Math.min(100, prev.x + normalizedX * 2)),
+        y: Math.max(0, Math.min(100, prev.y + normalizedY * 2))
+      }));
+    }
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    handleJoystickMove(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (isDragging) {
+      handleJoystickMove(e.clientX, e.clientY);
+    }
+  }, [isDragging, handleJoystickMove]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Touch events for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    const touch = e.touches[0];
+    handleJoystickMove(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (isDragging && e.touches[0]) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleJoystickMove(touch.clientX, touch.clientY);
+    }
+  }, [isDragging, handleJoystickMove]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Add global event listeners
+  React.useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
   return (
-    <div className="glass rounded-2xl overflow-hidden glow-border h-full">
-      {/* Header */}
-      <div className="p-6 border-b border-border">
-        <h2 className="text-2xl font-bold text-accent glow">Bassäng Visualisering</h2>
-        <p className="text-secondary">Huvudbassäng - Sektor A</p>
-      </div>
-
-      {/* Bassäng område */}
-      <div className="relative h-196">
-        {/* Bakgrundsbild */}
+    <div className="glass rounded-2xl overflow-hidden h-full">
+      {/* Bassäng diagram område */}
+      <div className="relative h-full">
+        {/* ReactFlow diagram */}
         <div className="absolute inset-0">
-          <Image
-            src="/basins.png"
-            alt="Eel Basin"
-            fill
-            className="object-cover"
-          />
+          <BasinFlowDiagram />
         </div>
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
-
-        {/* Kran position */}
-        <div 
-          className="absolute w-8 h-8 transition-all duration-500 ease-out"
-          style={{ 
-            left: `${cranePosition.x}%`, 
-            top: `${cranePosition.y}%`,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          <div className="relative">
-            {/* Kran ikon */}
-            <div className={`w-8 h-8 rounded-full bg-accent border-2 border-white shadow-lg ${
-              isFeeding ? 'animate-bounce' : 'pulse'
-            }`}>
-              <svg className="w-full h-full p-1 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-            </div>
-            
-            {/* Matning effekt */}
-            {isFeeding && (
-              <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-1 h-1 bg-warning rounded-full animate-ping"
-                    style={{ 
-                      animationDelay: `${i * 0.2}s`,
-                      marginTop: `${i * 4}px`
-                    }}
-                  ></div>
-                ))}
+        {/* Kontrollpanel - absolut positionerad längst ner */}
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <div className="glass rounded-2xl p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* System status */}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Systemstatus</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">Aktiva bassänger:</span>
+                    <span className="font-mono text-accent">4/6</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">Aktiva pumpar:</span>
+                    <span className="font-mono text-accent">2/3</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">Systemtryck:</span>
+                    <span className="font-mono text-accent">92 mbar</span>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Sensorer */}
-        <div className="absolute top-4 left-4 space-y-2">
-          <div className="flex items-center space-x-2 bg-black/50 rounded-lg px-3 py-2">
-            <div className="w-2 h-2 bg-success rounded-full pulse"></div>
-            <span className="text-sm text-white">Sensor 1: Aktiv</span>
-          </div>
-          <div className="flex items-center space-x-2 bg-black/50 rounded-lg px-3 py-2">
-            <div className="w-2 h-2 bg-warning rounded-full pulse"></div>
-            <span className="text-sm text-white">Sensor 2: Varning</span>
-          </div>
-        </div>
-
-        {/* Vattenflöde indikatorer */}
-        <div className="absolute bottom-4 right-4 space-y-2">
-          <div className="flex items-center space-x-2 bg-black/50 rounded-lg px-3 py-2">
-            <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <span className="text-sm text-white">Flöde: 2.4 L/s</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Kontrollpanel */}
-      <div className="p-6 border-t border-border">
-        <div className="grid grid-cols-2 gap-6">
-          {/* Kran kontroller */}
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7l4-4m0 0l4 4m-4-4v18" />
-              </svg>
-              Kran Kontroll
-            </h3>
-            <div className="grid grid-cols-3 gap-2">
-              <div></div>
-              <button 
-                onClick={() => moveCrane('up')}
-                className="touch-target bg-gradient-to-br from-accent/20 to-secondary/20 hover:from-accent/30 hover:to-secondary/30 border border-accent rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center"
-              >
-                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              </button>
-              <div></div>
-              
-              <button 
-                onClick={() => moveCrane('left')}
-                className="touch-target bg-gradient-to-br from-accent/20 to-secondary/20 hover:from-accent/30 hover:to-secondary/30 border border-accent rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center"
-              >
-                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              
-              <button 
-                onClick={() => setIsFeeding(!isFeeding)}
-                className={`touch-target rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center font-semibold ${
-                  isFeeding 
-                    ? 'bg-gradient-to-br from-warning to-orange-600 text-white glow-border' 
-                    : 'bg-gradient-to-br from-accent/20 to-secondary/20 border border-accent text-accent'
-                }`}
-              >
-                {isFeeding ? 'STOPP' : 'MATA'}
-              </button>
-              
-              <button 
-                onClick={() => moveCrane('right')}
-                className="touch-target bg-gradient-to-br from-accent/20 to-secondary/20 hover:from-accent/30 hover:to-secondary/30 border border-accent rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center"
-              >
-                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              
-              <div></div>
-              <button 
-                onClick={() => moveCrane('down')}
-                className="touch-target bg-gradient-to-br from-accent/20 to-secondary/20 hover:from-accent/30 hover:to-secondary/30 border border-accent rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center"
-              >
-                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div></div>
-            </div>
-          </div>
-
-          {/* Status information */}
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Position & Status</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-secondary">X-Position:</span>
-                <span className="font-mono text-accent">{cranePosition.x.toFixed(1)}%</span>
+              {/* Matningskontroll */}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Matningskontroll</h3>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setIsFeeding(!isFeeding)}
+                    className={`w-full touch-target rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center font-semibold py-3 ${
+                      isFeeding 
+                        ? 'bg-gradient-to-br from-warning to-orange-600 text-white' 
+                        : 'bg-gradient-to-br from-accent/20 to-secondary/20 border border-accent text-accent'
+                    }`}
+                  >
+                    {isFeeding ? 'STOPP MATNING' : 'STARTA MATNING'}
+                  </button>
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">Status:</span>
+                    <span className={`font-semibold ${
+                      isFeeding ? 'text-warning' : 'text-success'
+                    }`}>
+                      {isFeeding ? 'MATAR' : 'STANDBY'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-secondary">Y-Position:</span>
-                <span className="font-mono text-accent">{cranePosition.y.toFixed(1)}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-secondary">Status:</span>
-                <span className={`font-semibold ${
-                  isFeeding ? 'text-warning' : 'text-success'
-                }`}>
-                  {isFeeding ? 'MATAR' : 'STANDBY'}
-                </span>
+
+              {/* Temperatur översikt */}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Temperatur</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">Medel:</span>
+                    <span className="font-mono text-accent">18.9°C</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">Min:</span>
+                    <span className="font-mono text-blue-400">18.5°C</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">Max:</span>
+                    <span className="font-mono text-red-400">19.2°C</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

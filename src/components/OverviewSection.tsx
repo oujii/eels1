@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import FeedingPanel from './FeedingPanel';
 
 interface CircularProgressProps {
   percentage: number;
@@ -21,7 +22,7 @@ const CircularProgress = ({ percentage, size, strokeWidth }: CircularProgressPro
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(74, 144, 226, 0.2)"
+          stroke="rgba(255, 255, 255, 0.1)"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -47,7 +48,7 @@ const CircularProgress = ({ percentage, size, strokeWidth }: CircularProgressPro
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-3xl font-bold text-accent glow">{percentage}%</div>
+          <div className="text-3xl font-bold text-accent">{percentage}%</div>
           <div className="text-sm text-secondary">Komplett</div>
         </div>
       </div>
@@ -68,7 +69,7 @@ const OverviewSection = () => {
       {/* Översiktskort */}
       <div className="grid grid-cols-1 gap-4">
         {/* Progress Ring */}
-        <div className="glass rounded-2xl p-6 glow-border">
+        <div className="glass rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">Systemöversikt</h3>
           <div className="flex justify-center">
             <CircularProgress percentage={progress} size={160} strokeWidth={8} />
@@ -76,30 +77,26 @@ const OverviewSection = () => {
         </div>
 
         {/* Total Output */}
-        <div className="glass rounded-2xl p-6 glow-border">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-foreground">Total Produktion</h3>
-            <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
+        <div className="glass rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Total Produktion</h3>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-3xl font-bold text-accent">2,847</span>
+            <span className="text-lg text-secondary">kg</span>
           </div>
-          <div className="text-3xl font-bold text-success glow mb-1">4,520</div>
-          <div className="text-sm text-secondary">kg denna månad</div>
-          <div className="mt-3 h-2 bg-gray-700 rounded-full overflow-hidden shimmer">
-            <div className="h-full bg-gradient-to-r from-success to-accent w-3/4 rounded-full"></div>
+          <div className="text-sm text-secondary mt-1">Denna månad</div>
+          <div className="flex items-center mt-3">
+            <div className="flex-1 bg-secondary/20 rounded-full h-2">
+              <div className="bg-gradient-to-r from-accent to-success h-2 rounded-full" style={{width: '73%'}}></div>
+            </div>
+            <span className="ml-3 text-sm text-secondary">73% av mål</span>
           </div>
         </div>
 
-        {/* Aktiva Bassänger */}
-        <div className="glass rounded-2xl p-6 glow-border">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-foreground">Aktiva Bassänger</h3>
-            <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
+        {/* Active Basins */}
+        <div className="glass rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Aktiva Bassänger</h3>
           <div className="flex items-baseline space-x-2">
-            <span className="text-3xl font-bold text-accent glow">6</span>
+            <span className="text-3xl font-bold text-accent">6</span>
             <span className="text-xl text-secondary">/</span>
             <span className="text-xl text-secondary">6</span>
           </div>
@@ -112,6 +109,9 @@ const OverviewSection = () => {
         </div>
       </div>
 
+      {/* Matningskontroll */}
+      <FeedingPanel />
+
       {/* Nödstoppspanel */}
       <div className="glass rounded-2xl p-6 border-2 border-error/50">
         <h3 className="text-lg font-semibold text-error mb-4 flex items-center">
@@ -120,15 +120,12 @@ const OverviewSection = () => {
           </svg>
           Nödstopp
         </h3>
-        <div className="space-y-3">
-          <button className="w-full touch-target bg-gradient-to-r from-error to-red-600 hover:from-red-600 hover:to-error text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 glow-border">
-            STOPP ALLA SYSTEM
+        <div className="grid grid-cols-2 gap-4">
+          <button className="bg-error hover:bg-error/80 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg">
+            STOPP ALLA
           </button>
-          <button className="w-full touch-target bg-gradient-to-r from-warning to-orange-600 hover:from-orange-600 hover:to-warning text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 active:scale-95">
-            STOPP MATNING
-          </button>
-          <button className="w-full touch-target bg-gradient-to-r from-blue-600 to-accent hover:from-accent hover:to-blue-600 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 active:scale-95">
-            STOPP PUMPAR
+          <button className="bg-warning hover:bg-warning/80 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg">
+            PAUSA SYSTEM
           </button>
         </div>
       </div>

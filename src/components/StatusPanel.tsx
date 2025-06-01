@@ -31,7 +31,7 @@ const Measurement = ({ label, value, unit, min, max, optimal, icon }: Measuremen
   };
 
   return (
-    <div className="glass rounded-xl p-4 glow-border">
+    <div className="glass rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
           <div className="text-accent">{icon}</div>
@@ -105,8 +105,8 @@ const StatusPanel = () => {
   return (
     <div className="space-y-6">
       {/* Huvudstatus */}
-      <div className="glass rounded-2xl p-6 glow-border">
-        <h3 className="text-xl font-bold text-accent glow mb-6">Systemstatus</h3>
+      <div className="glass rounded-2xl p-6">
+        <h3 className="text-xl font-bold text-accent mb-6">Systemstatus</h3>
         
         <div className="grid grid-cols-1 gap-4">
           {/* Temperatur */}
@@ -142,8 +142,8 @@ const StatusPanel = () => {
       </div>
 
       {/* Vattenkvalitet */}
-      <div className="glass rounded-2xl p-6 glow-border">
-        <h3 className="text-xl font-bold text-accent glow mb-6">Vattenkvalitet</h3>
+      <div className="glass rounded-2xl p-6">
+        <h3 className="text-xl font-bold text-accent mb-6">Vattenkvalitet</h3>
         
         <div className="grid grid-cols-1 gap-4">
           {/* Syre */}

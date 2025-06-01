@@ -55,8 +55,8 @@ const TouchNavigation = () => {
 
   return (
     <nav className="fixed top-24 left-0 right-0 z-40 glass border-t border-border">
-      <div className="flex justify-center px-8 py-4">
-        <div className="flex space-x-4 overflow-x-auto p-5">
+      <div className="px-4 py-4">
+        <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -67,13 +67,13 @@ const TouchNavigation = () => {
                 onClick={() => setActiveTab(item.id)}
                 className={`
                   relative touch-target flex flex-col items-center justify-center
-                  px-6 py-4 rounded-xl transition-all duration-300
+                  px-4 py-6 rounded-xl transition-all duration-300
                   hover:scale-105 active:scale-95
                   ${isActive 
                     ? 'bg-gradient-to-br from-accent/20 to-secondary/20 border border-accent glow-border' 
                     : 'bg-gradient-to-br from-card-bg hover:from-accent/10 hover:to-secondary/10'
                   }
-                  min-w-[120px]
+                  w-full
                 `}
               >
                 {getStatusIndicator(item.status)}
