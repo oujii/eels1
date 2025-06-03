@@ -138,43 +138,28 @@ const Dashboard = () => {
 
         {/* Floating particles */}
         <div className="absolute inset-0">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-accent/30 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 10}s`,
-                animation: `float ${5 + Math.random() * 10}s infinite linear`
-              }}
-            ></div>
-          ))}
+          {[...Array(20)].map((_, i) => {
+            // Use deterministic values based on index to avoid hydration mismatch
+            const left = ((i * 17) % 100);
+            const top = ((i * 23) % 100);
+            const delay = (i * 0.5) % 10;
+            const duration = 5 + (i % 10);
+            
+            return (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-accent/30 rounded-full animate-float"
+                style={{
+                  left: `${left}%`,
+                  top: `${top}%`,
+                  animationDelay: `${delay}s`,
+                  animationDuration: `${duration}s`
+                }}
+              ></div>
+            );
+          })}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0% {
-            transform: translateY(100vh) translateX(0);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          90% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(-100px) translateX(${Math.random() * 200 - 100}px);
-            opacity: 0;
-          }
-        }
-        
-        .bg-gradient-radial {
-          background: radial-gradient(circle, var(--tw-gradient-stops));
-        }
-      `}</style>
     </div>
   );
 };
