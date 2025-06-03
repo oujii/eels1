@@ -30,7 +30,7 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
   
   // Konstanter
   const MAX_DEPTH = selectedNet.maxDepth || 50; // meter
-  const STEP_SIZE_BASE = 0.5; // Grundstorlek för varje "hack" i meter
+  const STEP_SIZE_BASE = 0.125; // Kraftigt reducerad grundstorlek för varje "hack" i meter (fyra gånger mindre)
   const EMERGENCY_HOLD_TIME = 1500; // ms
   const EMERGENCY_SPEED = 10; // meter per sekund
   
@@ -209,10 +209,10 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
             {/* Vinsch A Slider */}
             <div className="flex flex-col items-center flex-1">
               <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch A</label>
-              <div className="flex-grow flex flex-col items-center justify-center relative w-12">
-                {/* Minimalistisk fylld stapel */}
+              <div className="flex-grow flex flex-col items-center justify-center relative w-16">
+                {/* Minimalistisk fylld stapel - bredare design */}
                 <div 
-                  className="w-10 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                  className="w-14 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
@@ -228,12 +228,20 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                     }
                   }}
                 >
-                  {/* Fylld del - från botten och uppåt */}
+                  {/* Fylld del - från botten och uppåt med gradvis färgövergång */}
                   <div 
-                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out ${
-                      powerWinchA === 100 ? 'bg-red-500 shadow-red-500/50' : 'bg-sky-400 shadow-sky-400/30'
-                    } shadow-lg`}
-                    style={{ height: `${powerWinchA}%` }}
+                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out shadow-lg`}
+                    style={{ 
+                      height: `${powerWinchA}%`,
+                      background: powerWinchA >= 50 
+                        ? `linear-gradient(to top, 
+                            ${powerWinchA >= 75 ? '#ef4444' : '#f97316'} 0%, 
+                            ${powerWinchA >= 90 ? '#dc2626' : powerWinchA >= 75 ? '#ea580c' : '#0ea5e9'} 100%)`
+                        : '#0ea5e9',
+                      boxShadow: powerWinchA >= 75 
+                        ? '0 0 20px rgba(239, 68, 68, 0.5)' 
+                        : '0 0 15px rgba(14, 165, 233, 0.3)'
+                    }}
                   />
                   {/* Invisible input för tangentbord/tillgänglighet */}
                   <input
@@ -248,7 +256,9 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                 </div>
               </div>
               <div className="mt-2 text-center">
-                <span className={`text-lg font-bold ${powerWinchA === 100 ? 'text-red-400' : 'text-white'}`}>
+                <span className={`text-lg font-bold ${
+                  powerWinchA >= 75 ? 'text-red-400' : powerWinchA >= 50 ? 'text-orange-400' : 'text-white'
+                }`}>
                   {powerWinchA}%
                 </span>
               </div>
@@ -257,10 +267,10 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
             {/* Vinsch B Slider */}
             <div className="flex flex-col items-center flex-1">
               <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch B</label>
-              <div className="flex-grow flex flex-col items-center justify-center relative w-12">
-                {/* Minimalistisk fylld stapel */}
+              <div className="flex-grow flex flex-col items-center justify-center relative w-16">
+                {/* Minimalistisk fylld stapel - bredare design */}
                 <div 
-                  className="w-10 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                  className="w-14 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
@@ -276,12 +286,20 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                     }
                   }}
                 >
-                  {/* Fylld del - från botten och uppåt */}
+                  {/* Fylld del - från botten och uppåt med gradvis färgövergång */}
                   <div 
-                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out ${
-                      powerWinchB === 100 ? 'bg-red-500 shadow-red-500/50' : 'bg-sky-400 shadow-sky-400/30'
-                    } shadow-lg`}
-                    style={{ height: `${powerWinchB}%` }}
+                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out shadow-lg`}
+                    style={{ 
+                      height: `${powerWinchB}%`,
+                      background: powerWinchB >= 50 
+                        ? `linear-gradient(to top, 
+                            ${powerWinchB >= 75 ? '#ef4444' : '#f97316'} 0%, 
+                            ${powerWinchB >= 90 ? '#dc2626' : powerWinchB >= 75 ? '#ea580c' : '#0ea5e9'} 100%)`
+                        : '#0ea5e9',
+                      boxShadow: powerWinchB >= 75 
+                        ? '0 0 20px rgba(239, 68, 68, 0.5)' 
+                        : '0 0 15px rgba(14, 165, 233, 0.3)'
+                    }}
                   />
                   {/* Invisible input för tangentbord/tillgänglighet */}
                   <input
@@ -296,7 +314,9 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                 </div>
               </div>
               <div className="mt-2 text-center">
-                <span className={`text-lg font-bold ${powerWinchB === 100 ? 'text-red-400' : 'text-white'}`}>
+                <span className={`text-lg font-bold ${
+                  powerWinchB >= 75 ? 'text-red-400' : powerWinchB >= 50 ? 'text-orange-400' : 'text-white'
+                }`}>
                   {powerWinchB}%
                 </span>
               </div>
@@ -413,8 +433,10 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                   className={`absolute bottom-0 w-full transition-all duration-300 ${getWinchLoadColor()}`}
                   style={{ height: `${winchLoad}%` }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">{winchLoad.toFixed(0)}%</span>
+                <div className="absolute inset-0 flex items-center justify-center z-10">
+                  <span className="text-white font-bold text-lg drop-shadow-lg" style={{
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8), 1px -1px 2px rgba(0,0,0,0.8), -1px 1px 2px rgba(0,0,0,0.8)'
+                  }}>{winchLoad.toFixed(0)}%</span>
                 </div>
               </div>
               {/* Skalmarkeringar */}

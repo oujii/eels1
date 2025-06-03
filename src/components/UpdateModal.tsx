@@ -376,7 +376,7 @@ const FeaturesStep = ({ features, currentFeature, featureCarouselCompleted, back
         />
         {!featureCarouselCompleted && (
           <div className="absolute top-2 right-2 text-xs text-yellow-400 animate-pulse">
-            Auto-uppselning...
+            ...
           </div>
         )}
       </div>
