@@ -8,181 +8,479 @@ interface NetControlViewProps {
   onBack: () => void;
 }
 
-const MAX_WINCH_LOAD = 100;
-const NORMAL_OPERATION_LOAD = 30;
-const EMERGENCY_OPERATION_LOAD = 95;
-const LOWER_SPEED_NORMAL = 0.5; // meters per second (simulated)
-const RAISE_SPEED_NORMAL = 0.7;
-const LOWER_SPEED_EMERGENCY = 5; // meters per second (simulated)
-
 const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) => {
-  const [currentDepth, setCurrentDepth] = useState(selectedNet.depth);
+  // State för effektreglage
+  const [powerWinchA, setPowerWinchA] = useState(0);
+  const [powerWinchB, setPowerWinchB] = useState(0);
+  
+  // State för nätposition och djup
+  const [currentDepth, setCurrentDepth] = useState(0); // Börja med nätet ovanför bassängen
+  const [netPosition, setNetPosition] = useState(0); // Position i procent (0 = ovanför bassängen, 100 = i bassängen)
+  
+  // State för vinschbelastning och system
   const [winchLoad, setWinchLoad] = useState(0);
-  const [isOperating, setIsOperating] = useState(false);
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [isEmergencyPressed, setIsEmergencyPressed] = useState(false);
+  const [emergencyProgress, setEmergencyProgress] = useState(0);
+  
+  // Refs för timers
   const emergencyPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const operationInterval = useRef<NodeJS.Timeout | null>(null);
-
-  const NET_HEIGHT_PERCENTAGE = 80; // Net visual takes 80% of the container height
-
+  const emergencyProgressTimer = useRef<NodeJS.Timeout | null>(null);
+  const emergencyOperationTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // Konstanter
+  const MAX_DEPTH = selectedNet.maxDepth || 50; // meter
+  const STEP_SIZE_BASE = 0.5; // Grundstorlek för varje "hack" i meter
+  const EMERGENCY_HOLD_TIME = 1500; // ms
+  const EMERGENCY_SPEED = 10; // meter per sekund
+  
+  // Beräkna effektiv stegstorlek baserat på effektreglage
+  const getEffectiveStepSize = () => {
+    const avgPower = (powerWinchA + powerWinchB) / 2;
+    const multiplier = 1 + (avgPower / 100) * 4; // 1x till 5x hastighet
+    return STEP_SIZE_BASE * multiplier;
+  };
+  
+  // Beräkna vinschbelastning baserat på effekt och rörelse
+  const calculateWinchLoad = () => {
+    const avgPower = (powerWinchA + powerWinchB) / 2;
+    const baseLoad = avgPower * 0.8; // Grundbelastning från effekt
+    return Math.min(100, baseLoad);
+  };
+  
+  // Uppdatera vinschbelastning när effekt ändras
   useEffect(() => {
-    setCurrentDepth(selectedNet.depth);
-    setWinchLoad(0);
-    setIsOperating(false);
-    setIsEmergencyMode(false);
-  }, [selectedNet]);
-
-  const stopOperation = () => {
-    setIsOperating(false);
-    if (operationInterval.current) clearInterval(operationInterval.current);
-    if (!isEmergencyMode) setWinchLoad(0);
-  };
-
-  const handleOperation = (direction: 'lower' | 'raise', emergency: boolean = false) => {
-    if (isOperating && !emergency) return; // Prevent multiple normal operations
-
-    setIsOperating(true);
-    setIsEmergencyMode(emergency);
-    setWinchLoad(emergency ? EMERGENCY_OPERATION_LOAD : NORMAL_OPERATION_LOAD);
-
-    const speed = emergency ? LOWER_SPEED_EMERGENCY :
-                  direction === 'lower' ? LOWER_SPEED_NORMAL : RAISE_SPEED_NORMAL;
-    const targetDepth = direction === 'lower' ? selectedNet.maxDepth : 0;
-    const depthChangePerTick = speed / 10; // Update 10 times per second
-
-    if (operationInterval.current) clearInterval(operationInterval.current);
-
-    operationInterval.current = setInterval(() => {
-      setCurrentDepth(prevDepth => {
-        let newDepth;
-        if (direction === 'lower') {
-          newDepth = Math.min(prevDepth + depthChangePerTick, targetDepth);
-        } else {
-          newDepth = Math.max(prevDepth - depthChangePerTick, targetDepth);
-        }
-
-        if ((direction === 'lower' && newDepth >= targetDepth) || 
-            (direction === 'raise' && newDepth <= targetDepth)) {
-          stopOperation();
-          if (emergency) setIsEmergencyMode(false); // Reset emergency mode after completion
-        }
-        return newDepth;
-      });
-    }, 100);
-  };
-
-  const handleEmergencyPressStart = () => {
-    setIsEmergencyPressed(true);
-    emergencyPressTimer.current = setTimeout(() => {
-      if (isEmergencyPressed) { // Check if still pressed
-        handleOperation('lower', true);
+    if (!isEmergencyMode) {
+      setWinchLoad(calculateWinchLoad());
+    }
+  }, [powerWinchA, powerWinchB, isEmergencyMode]);
+  
+  // Hantera manuell stegvis sänkning
+  const handleManualStep = (direction: 'down' | 'up') => {
+    if (isEmergencyMode) return;
+    
+    const stepSize = getEffectiveStepSize();
+    const newDepth = direction === 'down' 
+      ? Math.min(currentDepth + stepSize, MAX_DEPTH)
+      : Math.max(currentDepth - stepSize, 0);
+    
+    setCurrentDepth(newDepth);
+    setNetPosition((newDepth / MAX_DEPTH) * 100);
+    
+    // Tillfällig belastningsökning vid rörelse
+    const tempLoad = Math.min(100, calculateWinchLoad() + 20);
+    setWinchLoad(tempLoad);
+    
+    // Återgå till normal belastning efter kort tid
+    setTimeout(() => {
+      if (!isEmergencyMode) {
+        setWinchLoad(calculateWinchLoad());
       }
-      setIsEmergencyPressed(false); // Reset after timer or release
-    }, 1500); // 1.5 seconds press and hold
+    }, 300);
   };
-
-  const handleEmergencyPressEnd = () => {
+  
+  // Hantera nödknapp - start
+  const handleEmergencyStart = () => {
+    if (isEmergencyMode || currentDepth >= MAX_DEPTH) return;
+    
+    setIsEmergencyPressed(true);
+    setEmergencyProgress(0);
+    
+    // Starta progress timer
+    emergencyProgressTimer.current = setInterval(() => {
+      setEmergencyProgress(prev => {
+        const newProgress = prev + (100 / (EMERGENCY_HOLD_TIME / 50));
+        if (newProgress >= 100) {
+          startEmergencyOperation();
+          return 100;
+        }
+        return newProgress;
+      });
+    }, 50);
+    
+    // Sätt huvudtimer för aktivering
+    emergencyPressTimer.current = setTimeout(() => {
+      startEmergencyOperation();
+    }, EMERGENCY_HOLD_TIME);
+  };
+  
+  // Hantera nödknapp - stopp
+  const handleEmergencyStop = () => {
     setIsEmergencyPressed(false);
+    setEmergencyProgress(0);
+    
     if (emergencyPressTimer.current) {
       clearTimeout(emergencyPressTimer.current);
       emergencyPressTimer.current = null;
     }
-    // If emergency operation hasn't started (timer didn't complete), don't start it.
-    // If it has started, it will continue until completion or manual stop (if implemented).
+    
+    if (emergencyProgressTimer.current) {
+      clearInterval(emergencyProgressTimer.current);
+      emergencyProgressTimer.current = null;
+    }
   };
-
-  const depthPercentage = (currentDepth / selectedNet.maxDepth) * 100;
-  const winchLoadColor = winchLoad > 80 ? 'bg-red-500' : winchLoad > 50 ? 'bg-yellow-500' : 'bg-green-500';
+  
+  // Starta nödsänkning
+  const startEmergencyOperation = () => {
+    setIsEmergencyMode(true);
+    setIsEmergencyPressed(false);
+    setEmergencyProgress(0);
+    setWinchLoad(100);
+    
+    // Rensa timers
+    if (emergencyPressTimer.current) clearTimeout(emergencyPressTimer.current);
+    if (emergencyProgressTimer.current) clearInterval(emergencyProgressTimer.current);
+    
+    // Starta kontinuerlig snabb sänkning
+    emergencyOperationTimer.current = setInterval(() => {
+      setCurrentDepth(prevDepth => {
+        const newDepth = Math.min(prevDepth + (EMERGENCY_SPEED / 10), MAX_DEPTH);
+        setNetPosition((newDepth / MAX_DEPTH) * 100);
+        
+        if (newDepth >= MAX_DEPTH) {
+          // Nödsänkning klar
+          setIsEmergencyMode(false);
+          setWinchLoad(calculateWinchLoad());
+          if (emergencyOperationTimer.current) {
+            clearInterval(emergencyOperationTimer.current);
+            emergencyOperationTimer.current = null;
+          }
+        }
+        
+        return newDepth;
+      });
+    }, 100);
+  };
+  
+  // Cleanup vid unmount
+  useEffect(() => {
+    return () => {
+      if (emergencyPressTimer.current) clearTimeout(emergencyPressTimer.current);
+      if (emergencyProgressTimer.current) clearInterval(emergencyProgressTimer.current);
+      if (emergencyOperationTimer.current) clearInterval(emergencyOperationTimer.current);
+    };
+  }, []);
+  
+  // Färgfunktioner för sliders
+  const getSliderColor = (value: number) => {
+    if (value === 100) return 'bg-red-500';
+    if (value > 75) return 'bg-orange-500';
+    if (value > 50) return 'bg-yellow-500';
+    return 'bg-blue-500';
+  };
+  
+  const getSliderTrackColor = (value: number) => {
+    if (value === 100) return 'bg-gradient-to-t from-red-500 to-red-400';
+    if (value > 75) return 'bg-gradient-to-t from-orange-500 to-orange-400';
+    if (value > 50) return 'bg-gradient-to-t from-yellow-500 to-yellow-400';
+    return 'bg-gradient-to-t from-blue-500 to-blue-400';
+  };
+  
+  // Vinschbelastning färg
+  const getWinchLoadColor = () => {
+    if (isEmergencyMode) return 'bg-red-600 animate-pulse';
+    if (winchLoad > 80) return 'bg-red-500';
+    if (winchLoad > 60) return 'bg-orange-500';
+    if (winchLoad > 40) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
 
   return (
     <div className="p-4 md:p-6 bg-gray-800/60 backdrop-blur-lg rounded-lg shadow-2xl h-full flex flex-col text-slate-100">
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-sky-300">Kontroll: {selectedNet.name}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-sky-300">Matning: {selectedNet.name}</h2>
         <button 
           onClick={onBack} 
           className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-colors duration-200 text-sm"
         >
-          &larr; Tillbaka till val
+          ← Tillbaka till val
         </button>
       </div>
 
-      <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-stretch">
-        {/* Net Visualization Column */}
-        <div className="md:col-span-2 bg-slate-900/70 p-3 md:p-4 rounded-lg shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
-          <p className="absolute top-2 left-2 text-xs text-slate-400">Djup: {currentDepth.toFixed(1)}m / {selectedNet.maxDepth}m</p>
-          <div className="w-2/3 md:w-1/2 h-full bg-slate-700 rounded-t-md relative border-2 border-slate-600 flex items-end justify-center" style={{ maxHeight: 'calc(100% - 40px)' }}> {/* Silo/Tank structure */}
-            <div 
-              className={`absolute bottom-0 w-full ${isEmergencyMode ? 'bg-red-600/80 animate-pulse' : 'bg-sky-500/80'} transition-all duration-100 ease-linear rounded-t-sm`}
-              style={{ height: `${(depthPercentage / 100) * NET_HEIGHT_PERCENTAGE}%`, bottom: 0, left:0, right:0, margin: 'auto'}}
-            > 
-              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-white font-semibold">NÄT</span>
+      {/* Huvudlayout - Tre kolumner */}
+      <div className="flex-grow grid grid-cols-3 gap-6 h-full">
+        
+        {/* VÄNSTERPANEL - Effektreglage */}
+        <div className="bg-slate-900/70 p-4 rounded-lg shadow-inner flex flex-col">
+          <h3 className="text-lg font-semibold mb-4 text-sky-200 text-center">Effektreglage</h3>
+          
+          <div className="flex-grow flex justify-around items-stretch gap-4">
+            {/* Vinsch A Slider */}
+            <div className="flex flex-col items-center flex-1">
+              <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch A</label>
+              <div className="flex-grow flex flex-col items-center justify-center relative w-12">
+                {/* Minimalistisk fylld stapel */}
+                <div 
+                  className="w-10 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                    setPowerWinchA(Math.round(percentage));
+                  }}
+                  onMouseMove={(e) => {
+                    if (e.buttons === 1) { // Om vänster musknapp är nedtryckt
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                      setPowerWinchA(Math.round(percentage));
+                    }
+                  }}
+                >
+                  {/* Fylld del - från botten och uppåt */}
+                  <div 
+                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out ${
+                      powerWinchA === 100 ? 'bg-red-500 shadow-red-500/50' : 'bg-sky-400 shadow-sky-400/30'
+                    } shadow-lg`}
+                    style={{ height: `${powerWinchA}%` }}
+                  />
+                  {/* Invisible input för tangentbord/tillgänglighet */}
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={powerWinchA}
+                    onChange={(e) => setPowerWinchA(Number(e.target.value))}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    style={{ transform: 'rotate(-90deg)', WebkitAppearance: 'slider-vertical' }}
+                  />
+                </div>
+              </div>
+              <div className="mt-2 text-center">
+                <span className={`text-lg font-bold ${powerWinchA === 100 ? 'text-red-400' : 'text-white'}`}>
+                  {powerWinchA}%
+                </span>
+              </div>
             </div>
-          </div>
-          {/* Depth Scale */}
-          <div className="absolute right-2 md:right-4 top-10 bottom-10 w-4 bg-slate-600 rounded-full overflow-hidden">
-            <div 
-              className="absolute bottom-0 w-full bg-sky-400 transition-all duration-100 ease-linear"
-              style={{ height: `${depthPercentage}%` }}
-            ></div>
+            
+            {/* Vinsch B Slider */}
+            <div className="flex flex-col items-center flex-1">
+              <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch B</label>
+              <div className="flex-grow flex flex-col items-center justify-center relative w-12">
+                {/* Minimalistisk fylld stapel */}
+                <div 
+                  className="w-10 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                    setPowerWinchB(Math.round(percentage));
+                  }}
+                  onMouseMove={(e) => {
+                    if (e.buttons === 1) { // Om vänster musknapp är nedtryckt
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                      setPowerWinchB(Math.round(percentage));
+                    }
+                  }}
+                >
+                  {/* Fylld del - från botten och uppåt */}
+                  <div 
+                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out ${
+                      powerWinchB === 100 ? 'bg-red-500 shadow-red-500/50' : 'bg-sky-400 shadow-sky-400/30'
+                    } shadow-lg`}
+                    style={{ height: `${powerWinchB}%` }}
+                  />
+                  {/* Invisible input för tangentbord/tillgänglighet */}
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={powerWinchB}
+                    onChange={(e) => setPowerWinchB(Number(e.target.value))}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    style={{ transform: 'rotate(-90deg)', WebkitAppearance: 'slider-vertical' }}
+                  />
+                </div>
+              </div>
+              <div className="mt-2 text-center">
+                <span className={`text-lg font-bold ${powerWinchB === 100 ? 'text-red-400' : 'text-white'}`}>
+                  {powerWinchB}%
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Controls Column */}
-        <div className="flex flex-col justify-between space-y-4 bg-slate-700/50 p-3 md:p-4 rounded-lg shadow-md">
-          <div>
-            <h3 className="text-lg font-semibold mb-3 text-sky-200">Manövrering</h3>
-            <div className="space-y-3">
-              <button 
-                onClick={() => handleOperation('lower')}
-                disabled={isOperating || currentDepth >= selectedNet.maxDepth}
-                className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-500 text-white font-medium rounded-md transition-colors duration-200 shadow-md disabled:opacity-70"
+        {/* MITTENPANEL - Nätvisualisering och Manövrering */}
+        <div className="bg-slate-900/70 p-4 rounded-lg shadow-inner flex flex-col">
+          {/* Upp-knapp */}
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => handleManualStep('up')}
+              disabled={isEmergencyMode || currentDepth <= 0}
+              className="w-16 h-16 bg-green-600 hover:bg-green-500 disabled:bg-slate-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50"
+            >
+              <ChevronUp size={32} />
+            </button>
+          </div>
+          
+          {/* Bassäng och nät visualisering */}
+          <div className="flex-grow relative flex items-center justify-center overflow-hidden">
+            <div className="relative w-full h-full max-w-md flex flex-col">
+              {/* Rep/Kabel från toppen */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-slate-400 z-10"
+                   style={{ 
+                     top: '5%',
+                     height: `${10 + (netPosition * 0.65)}%`
+                   }}>
+              </div>
+              
+              {/* Nät som rör sig vertikalt - startar helt ovanför bassängen */}
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-linear z-20"
+                style={{ 
+                  top: `${10 + (netPosition * 0.65)}%`,
+                  width: '40%'
+                }}
               >
-                <ChevronDown size={20} className="mr-2" /> Sänk Nät
-              </button>
-              <button 
-                onClick={() => handleOperation('raise')}
-                disabled={isOperating || currentDepth <= 0}
-                className="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-500 disabled:bg-slate-500 text-white font-medium rounded-md transition-colors duration-200 shadow-md disabled:opacity-70"
-              >
-                <ChevronUp size={20} className="mr-2" /> Höj Nät
-              </button>
+                <img 
+                  src="/netisolated.png" 
+                  alt="Nät" 
+                  className={`w-full h-auto object-contain ${isEmergencyMode ? 'filter brightness-75 contrast-125' : ''}`}
+                />
+              </div>
+              
+              {/* Bassäng placerad längst ner - cirkulär/elliptisk form */}
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2" style={{ width: '70%', height: '30%' }}>
+                <img 
+                  src="/basinisolated.png" 
+                  alt="Bassäng" 
+                  className="w-full h-full object-contain rounded-full"
+                  style={{ aspectRatio: '1.2/1' }}
+                />
+              </div>
+            </div>
+            
+            {/* Djupindikator */}
+            <div className="absolute top-4 left-4 bg-slate-800/80 p-2 rounded-lg">
+              <div className="text-xs text-slate-300">Aktuellt Djup</div>
+              <div className="text-lg font-bold text-sky-300">{currentDepth.toFixed(1)}m</div>
+              <div className="text-xs text-slate-400">av {MAX_DEPTH}m</div>
             </div>
           </div>
+          
+          {/* Ner-knapp */}
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => handleManualStep('down')}
+              disabled={isEmergencyMode || currentDepth >= MAX_DEPTH}
+              className="w-16 h-16 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50"
+            >
+              <ChevronDown size={32} />
+            </button>
+          </div>
+        </div>
 
-          <div className="mt-auto">
-            <h3 className="text-lg font-semibold mb-2 text-sky-200">Vinschbelastning</h3>
-            <div className="w-full bg-slate-600 rounded-full h-6 md:h-8 shadow-inner overflow-hidden relative">
-              <div 
-                className={`h-full ${winchLoadColor} transition-all duration-300 ease-out flex items-center justify-center text-xs md:text-sm font-bold text-white`}
-                style={{ width: `${winchLoad}%` }}
-              >
-                {winchLoad.toFixed(0)}%
+        {/* HÖGERPANEL - Status och Nödsystem */}
+        <div className="bg-slate-900/70 p-4 rounded-lg shadow-inner flex flex-col">
+          {/* Status sektion */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-3 text-sky-200">Status</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-300">Valt Nät:</span>
+                <span className="text-white font-medium">{selectedNet.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-300">Aktuellt Djup:</span>
+                <span className="text-white font-medium">{currentDepth.toFixed(1)}m</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-300">Max Djup:</span>
+                <span className="text-white font-medium">{MAX_DEPTH}m</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-300">Systemstatus:</span>
+                <span className={`font-medium ${
+                  isEmergencyMode ? 'text-red-400' : 'text-green-400'
+                }`}>
+                  {isEmergencyMode ? 'NÖDLÄGE' : 'NORMAL'}
+                </span>
               </div>
             </div>
           </div>
           
-          <div className="mt-auto pt-4 border-t border-slate-600/50">
-            <h3 className="text-lg font-semibold mb-2 text-red-400 flex items-center"><AlertTriangle size={20} className="mr-2 text-red-500"/>Nödsystem</h3>
+          {/* Vinschbelastning */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2 text-sky-200">Vinschbelastning</h3>
+            <div className="relative">
+              {/* Vertikal mätare */}
+              <div className="w-full h-32 bg-slate-600 rounded-lg overflow-hidden relative">
+                <div 
+                  className={`absolute bottom-0 w-full transition-all duration-300 ${getWinchLoadColor()}`}
+                  style={{ height: `${winchLoad}%` }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">{winchLoad.toFixed(0)}%</span>
+                </div>
+              </div>
+              {/* Skalmarkeringar */}
+              <div className="absolute right-full mr-2 top-0 h-full flex flex-col justify-between text-xs text-slate-400">
+                <span>100%</span>
+                <span>75%</span>
+                <span>50%</span>
+                <span>25%</span>
+                <span>0%</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Nödsystem */}
+          <div className="mt-auto">
+            <h3 className="text-lg font-semibold mb-2 text-red-400 flex items-center">
+              <AlertTriangle size={20} className="mr-2 text-red-500"/>
+              Nödsystem
+            </h3>
+            
             <button 
-              onMouseDown={handleEmergencyPressStart}
-              onMouseUp={handleEmergencyPressEnd}
-              onTouchStart={handleEmergencyPressStart} // For touch devices
-              onTouchEnd={handleEmergencyPressEnd}   // For touch devices
-              disabled={isEmergencyMode || (isOperating && !isEmergencyMode) || currentDepth >= selectedNet.maxDepth}
-              className={`w-full flex items-center justify-center px-4 py-3 font-bold rounded-md transition-all duration-200 shadow-xl focus:outline-none focus:ring-4 focus:ring-opacity-50 relative overflow-hidden
-                ${isEmergencyPressed ? 'bg-yellow-500 text-slate-900 ring-yellow-400' : 'bg-red-600 hover:bg-red-500 text-white ring-red-500'}
-                disabled:bg-slate-500 disabled:opacity-70 disabled:cursor-not-allowed`}
+              onMouseDown={handleEmergencyStart}
+              onMouseUp={handleEmergencyStop}
+              onMouseLeave={handleEmergencyStop}
+              onTouchStart={handleEmergencyStart}
+              onTouchEnd={handleEmergencyStop}
+              disabled={isEmergencyMode || currentDepth >= MAX_DEPTH}
+              className={`w-full h-16 font-bold rounded-lg transition-all duration-200 shadow-xl focus:outline-none relative overflow-hidden ${
+                isEmergencyPressed 
+                  ? 'bg-yellow-500 text-slate-900' 
+                  : 'bg-red-600 hover:bg-red-500 text-white'
+              } disabled:bg-slate-500 disabled:opacity-70 disabled:cursor-not-allowed`}
             >
               {isEmergencyPressed && (
-                <div className="absolute inset-0 bg-yellow-300/50 animate-pulse-fast"></div>
+                <div className="absolute inset-0 bg-yellow-300/50 animate-pulse"></div>
               )}
-              <Zap size={22} className="mr-2" /> {isEmergencyPressed ? 'AKTIVERAR...' : 'NÖDSÄNKNING (HÅLL IN)'}
+              
+              <div className="relative z-10 flex items-center justify-center">
+                <Zap size={22} className="mr-2" />
+                <span className="text-sm">
+                  {isEmergencyPressed ? 'AKTIVERAR...' : 'NÖDSÄNKNING'}
+                </span>
+              </div>
+              
+              <div className="relative z-10 text-xs mt-1">
+                (HÅLL IN)
+              </div>
             </button>
+            
+            {/* Progress bar för nödknapp */}
             {isEmergencyPressed && (
-                <div className="w-full bg-slate-600 rounded-full h-2 mt-2 overflow-hidden">
-                    <div className="bg-yellow-400 h-full rounded-full animate-emergency-progress"></div>
+              <div className="w-full bg-slate-600 rounded-full h-2 mt-2 overflow-hidden">
+                <div 
+                  className="bg-yellow-400 h-full rounded-full transition-all duration-75 ease-linear"
+                  style={{ width: `${emergencyProgress}%` }}
+                />
+              </div>
+            )}
+            
+            {/* Nödläge indikator */}
+            {isEmergencyMode && (
+              <div className="mt-2 p-2 bg-red-600/20 border border-red-500 rounded-lg">
+                <div className="text-red-400 text-sm font-bold text-center animate-pulse">
+                  NÖDSÄNKNING AKTIV
                 </div>
+              </div>
             )}
           </div>
         </div>
@@ -192,21 +490,3 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
 };
 
 export default NetControlView;
-
-// Add this to your globals.css or a style tag for the animation
-/*
-@keyframes emergency-progress {
-  0% { width: 0%; }
-  100% { width: 100%; }
-}
-.animate-emergency-progress {
-  animation: emergency-progress 1.5s linear forwards;
-}
-@keyframes pulse-fast {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-.animate-pulse-fast {
-  animation: pulse-fast 0.7s infinite;
-}
-*/
