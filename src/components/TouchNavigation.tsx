@@ -3,14 +3,34 @@
 import React from 'react';
 import { 
   HomeIcon, 
-  BeakerIcon, 
   CpuChipIcon, 
-  CakeIcon,
   CogIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
   UserIcon
 } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+
+// Custom icon components for PNG images
+const BasinIcon = ({ className }: { className?: string }) => (
+  <Image 
+    src="/icon_basin.png" 
+    alt="Basin" 
+    width={32} 
+    height={32} 
+    className={className}
+  />
+);
+
+const FeedingIcon = ({ className }: { className?: string }) => (
+  <Image 
+    src="/icon_matning.png" 
+    alt="Feeding" 
+    width={32} 
+    height={32} 
+    className={className}
+  />
+);
 
 interface NavItem {
   id: string;
@@ -21,9 +41,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: HomeIcon, status: 'active' },
-  { id: 'bassanger', label: 'Bassänger', icon: BeakerIcon },
+  { id: 'bassanger', label: 'Bassänger', icon: BasinIcon },
   { id: 'sensorer', label: 'Sensorer', icon: CpuChipIcon, status: 'warning' },
-  { id: 'matning', label: 'Matning', icon: CakeIcon },
+  { id: 'matning', label: 'Matning', icon: FeedingIcon },
   { id: 'installningar', label: 'Inställningar', icon: CogIcon },
   { id: 'rapporter', label: 'Rapporter', icon: DocumentTextIcon },
   { id: 'larm', label: 'Larm', icon: ExclamationTriangleIcon, status: 'error' },

@@ -8,10 +8,12 @@ import BasinVisualization from './BasinVisualization';
 import StatusPanel from './StatusPanel';
 import SystemStatus from './SystemStatus';
 import FingerprintModal from './FingerprintModal';
-import FeedingPanel from './FeedingPanel';
+import UpdateModal from './UpdateModal';
+import FeedingManagementPage from './FeedingManagementPage'; // Ersatt FeedingPanel
 
 const Dashboard = () => {
   const [showFingerprintModal, setShowFingerprintModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Visa modalen automatiskt när komponenten laddas
@@ -19,8 +21,25 @@ const Dashboard = () => {
     setShowFingerprintModal(true);
   }, []);
 
+  // Visa UpdateModal när användaren navigerar till matning-fliken
+  useEffect(() => {
+    if (activeTab === 'matning') {
+      const timer = setTimeout(() => {
+        setShowUpdateModal(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowUpdateModal(false);
+    }
+  }, [activeTab]);
+
   const handleCloseModal = () => {
     setShowFingerprintModal(false);
+  };
+
+  const handleUpdateComplete = () => {
+    setShowUpdateModal(false);
   };
 
   const handleTabChange = (tabId: string) => {
@@ -33,8 +52,8 @@ const Dashboard = () => {
         return (
           <div className="max-w-[3840px] mx-auto">
             <div className="grid grid-cols-12 gap-4 h-[calc(100vh-320px)]">
-              <div className="col-span-12">
-                <FeedingPanel />
+              <div className="col-span-12 h-full">
+                <FeedingManagementPage />
               </div>
             </div>
           </div>
@@ -92,6 +111,12 @@ const Dashboard = () => {
         isOpen={showFingerprintModal} 
         onClose={handleCloseModal} 
       />
+
+      {/* Update Modal */}
+      <UpdateModal 
+          isOpen={showUpdateModal}
+          onComplete={handleUpdateComplete}
+        />
 
       {/* Ytterligare visuella effekter */}
       <div className="fixed inset-0 pointer-events-none z-0">

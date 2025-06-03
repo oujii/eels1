@@ -43,6 +43,21 @@ body {
   min-height: 100vh;
 }
 
+@keyframes emergency-progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+.animate-emergency-progress {
+  animation: emergency-progress 1.5s linear forwards;
+}
+@keyframes pulse-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.animate-pulse-fast {
+  animation: pulse-fast 0.7s infinite;
+}
+
 /* Glassmorphism utility */
 .glass {
   background: rgba(15, 30, 46, 0.7);

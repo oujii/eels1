@@ -16,6 +16,34 @@ const progressStyle = `
     0%, 100% { opacity: 0.7; }
     50% { opacity: 1; }
   }
+  @keyframes spinBorder {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+    20%, 40%, 60%, 80% { transform: translateX(8px); }
+  }
+  .spinning-border {
+    position: relative;
+  }
+  .spinning-border::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 1rem;
+    padding: 3px;
+    background: conic-gradient(from 0deg, transparent, #60a5fa, transparent);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: xor;
+    -webkit-mask-composite: xor;
+    animation: spinBorder 2s linear infinite;
+    z-index: -1;
+  }
+  .shake {
+    animation: shake 0.6s ease-in-out;
+  }
 `;
 
 // Lägg till styles i head
@@ -32,6 +60,7 @@ interface FingerprintModalProps {
 
 type ModalState = 
   | 'waiting'
+  | 'success_reading'
   | 'basic_error'
   | 'active_scanning'
   | 'calibrating'
@@ -47,6 +76,7 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
   const [password, setPassword] = useState('');
   const [passwordAttempts, setPasswordAttempts] = useState(0);
   const [currentFooterMessage, setCurrentFooterMessage] = useState(0);
+  const [isShaking, setIsShaking] = useState(false);
   
   const tips = [
     'Testa att vinkla fingret åt vänster.',
@@ -98,8 +128,12 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
 
   const handleFingerprintClick = () => {
     if (modalState === 'waiting') {
-      setModalState('basic_error');
-      setAttemptCount(1);
+      setModalState('success_reading');
+      // Visa framgångsrik läsning i 3 sekunder innan fel börjar
+      setTimeout(() => {
+        setModalState('basic_error');
+        setAttemptCount(1);
+      }, 3000);
     } else if (modalState === 'basic_error') {
       const newAttemptCount = attemptCount + 1;
       setAttemptCount(newAttemptCount);
@@ -130,10 +164,12 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
     setPasswordAttempts(newPasswordAttempts);
     
     if (newPasswordAttempts === 1) {
-      // Första försöket - visa fel
+      // Första försöket - trigga shake animation
+      setIsShaking(true);
       setTimeout(() => {
+        setIsShaking(false);
         setPassword('');
-      }, 1500);
+      }, 600);
     } else {
       // Andra försöket - acceptera lösenord
       setTimeout(() => {
@@ -177,7 +213,11 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
       </div>
       
       {/* Modal innehåll */}
-      <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-600 rounded-2xl shadow-2xl max-w-lg w-full mx-4 backdrop-blur-lg overflow-hidden">
+      <div className={`relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 rounded-2xl shadow-2xl max-w-lg w-full mx-4 backdrop-blur-lg overflow-hidden select-none ${
+        modalState === 'success_reading' 
+          ? 'border-blue-400 spinning-border' 
+          : 'border-slate-600'
+      } ${isShaking ? 'shake' : ''}`}>
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-900 to-slate-800 px-8 py-6 border-b border-slate-600">
           <div className="text-center">
@@ -191,7 +231,7 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
             </div>
             <div className="space-y-1">
               <p className="text-xl text-blue-200 font-medium">
-                Hej Biffen!
+                Välkommen!
               </p>
               <p className="text-sm text-gray-300 font-light">
                 Vänligen autentisera för systemåtkomst.
@@ -200,11 +240,11 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
           </div>
         </div>
         
-        {/* Main Content Section */}
-        <div className="px-8 py-8 text-center min-h-[300px] flex flex-col justify-center">
+        {/* Main Content Section - Fixed height to prevent layout shift */}
+        <div className="px-8 py-8 text-center h-[400px] flex flex-col">
           {modalState === 'password_fallback' ? (
             // Lösenordsfallback UI
-            <div>
+            <div className="flex flex-col justify-center h-full">
               <h2 className="text-xl font-semibold text-white mb-4">
                 Alternativ inloggning
               </h2>
@@ -228,12 +268,6 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
                 Hint: Min gamla hund Sussies favoritleksak från när hon var valp...?
               </div>
               
-              {passwordAttempts === 1 && (
-                <div className="mb-4 text-red-400 text-sm">
-                  Fel lösenord.
-                </div>
-              )}
-              
               {passwordAttempts === 2 && (
                 <div className="mb-4 text-green-400 text-sm">
                   Lösenord accepterat!
@@ -243,93 +277,102 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
               <button
                 onClick={handlePasswordSubmit}
                 disabled={password.trim() === ''}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 font-medium"
+                className="w-full px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl transition-colors duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
               >
-                Skicka
+                Logga in
               </button>
             </div>
           ) : (
-            // Fingeravtrycks UI
-            <div>
-              {/* Text ovanför fingeravtrycksikon */}
-              <div className="mb-6">
-                {modalState === 'waiting' && (
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-2">
-                      Fingeravtrycksläsning
-                    </h2>
+            // Fingeravtrycks UI med fast layout
+            <div className="flex flex-col h-full">
+              {/* Text ovanför fingeravtrycksikon - Fast höjd för att förhindra layout shift */}
+              <div className="h-[120px] flex flex-col justify-center mb-6">
+                {/* Titel - Fast höjd */}
+                <div className="h-[32px] flex items-center justify-center mb-2">
+                  <h2 className={`text-xl font-semibold transition-colors duration-300 ${
+                    modalState === 'waiting' ? 'text-white' :
+                    modalState === 'success_reading' ? 'text-blue-400' :
+                    modalState === 'basic_error' || modalState === 'final_error' ? 'text-red-400' :
+                    modalState === 'active_scanning' ? 'text-blue-400' :
+                    modalState === 'calibrating' ? 'text-purple-400' :
+                    modalState === 'calibration_complete' ? 'text-green-400' :
+                    'text-white'
+                  }`}>
+                    {modalState === 'waiting' && 'Fingeravtrycksläsning'}
+                    {modalState === 'success_reading' && 'Läser fingeravtryck...'}
+                    {modalState === 'basic_error' && 'Fel: Kan inte läsa fingeravtryck.'}
+                    {modalState === 'active_scanning' && 'Utför noggrannare analys...'}
+                    {modalState === 'calibrating' && 'Systemet kalibrerar sensorn...'}
+                    {modalState === 'calibration_complete' && 'Kalibrering slutförd. Försök igen.'}
+                    {modalState === 'final_error' && 'Fingeravtryck ej igenkänt.'}
+                  </h2>
+                </div>
+                
+                {/* Beskrivning/tips - Fast höjd */}
+                <div className="h-[48px] flex items-center justify-center">
+                  {modalState === 'waiting' && (
                     <p className="text-gray-300">
                       Placera ditt finger på ikonen för att börja
                     </p>
-                  </div>
-                )}
-                
-                {modalState === 'basic_error' && (
-                  <div>
-                    <h2 className="text-xl font-semibold text-red-400 mb-2">
-                      Fel: Kan inte läsa fingeravtryck.
-                    </h2>
+                  )}
+                  
+                  {modalState === 'success_reading' && (
+                    <p className="text-blue-300">
+                      Håll fingret stilla under avläsning.
+                    </p>
+                  )}
+                  
+                  {modalState === 'basic_error' && (
                     <p className="text-yellow-300 text-sm animate-pulse">
                       {tips[currentTip]}
                     </p>
-                  </div>
-                )}
-                
-                {modalState === 'active_scanning' && (
-                  <div>
-                    <h2 className="text-xl font-semibold text-blue-400 mb-2">
-                      Utför noggrannare analys...
-                    </h2>
+                  )}
+                  
+                  {modalState === 'active_scanning' && (
                     <p className="text-blue-300">
                       Försök hålla fingret stilla.
                     </p>
-                    <div className="mt-4 flex justify-center">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {modalState === 'calibrating' && (
-                  <div>
-                    <h2 className="text-xl font-semibold text-purple-400 mb-2">
-                      Systemet kalibrerar sensorn...
-                    </h2>
-                    <div className="flex justify-center items-center mt-4">
-                      <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full" style={{ animation: 'spin 1s linear infinite' }}></div>
-                    </div>
-                  </div>
-                )}
-                
-                {modalState === 'calibration_complete' && (
-                  <div>
-                    <h2 className="text-xl font-semibold text-green-400 mb-2">
-                      Kalibrering slutförd. Försök igen.
-                    </h2>
-                  </div>
-                )}
-                
-                {modalState === 'final_error' && (
-                  <div>
-                    <h2 className="text-xl font-semibold text-red-400 mb-2">
-                      Fingeravtryck ej igenkänt.
-                    </h2>
+                  )}
+                  
+                  {modalState === 'final_error' && (
                     <p className="text-gray-300">
                       Övergår till alternativ inloggning...
                     </p>
-                  </div>
-                )}
+                  )}
+                </div>
+                
+                {/* Extra indikator för vissa states - Fast höjd */}
+                <div className="h-[32px] flex items-center justify-center">
+                  {modalState === 'success_reading' && (
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  )}
+                  
+                  {modalState === 'active_scanning' && (
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  )}
+                  
+                  {modalState === 'calibrating' && (
+                    <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full" style={{ animation: 'spin 1s linear infinite' }}></div>
+                  )}
+                </div>
               </div>
               
-              {/* Fingeravtrycksikon */}
-              <div className="mb-6">
+              {/* Fingeravtrycksikon - Fast position och storlek */}
+              <div className="flex-1 flex items-center justify-center">
                 <div 
-                  className={`w-28 h-24 mx-auto rounded-2xl border-4 flex items-center justify-center transition-all duration-500 ${
+                  className={`w-28 h-24 rounded-2xl border-4 flex items-center justify-center transition-all duration-500 ${
                     modalState === 'waiting' || modalState === 'basic_error'
                       ? 'cursor-pointer border-gray-400 bg-gray-500/20 hover:border-blue-400 hover:bg-blue-500/20'
+                      : modalState === 'success_reading'
+                      ? 'border-blue-400 bg-blue-500/20 animate-pulse'
                       : modalState === 'active_scanning'
                       ? 'border-blue-400 bg-blue-500/20 animate-pulse'
                       : modalState === 'calibrating'
@@ -342,6 +385,7 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
                   <svg 
                       className={`w-12 h-12 transition-colors duration-500 ${
                         modalState === 'waiting' || modalState === 'basic_error' ? 'text-gray-400' :
+                        modalState === 'success_reading' ? 'text-blue-400' :
                         modalState === 'active_scanning' ? 'text-blue-400' :
                         modalState === 'calibrating' ? 'text-purple-400' :
                         modalState === 'calibration_complete' ? 'text-green-400' :
