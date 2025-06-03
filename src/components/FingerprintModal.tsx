@@ -77,6 +77,7 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
   const [passwordAttempts, setPasswordAttempts] = useState(0);
   const [currentFooterMessage, setCurrentFooterMessage] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const tips = [
     'Testa att vinkla fingret åt vänster.',
@@ -184,6 +185,34 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
     }
   };
 
+  const handleLogoClick = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch((err) => {
+        console.log('Fullscreen request failed:', err);
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      }).catch((err) => {
+        console.log('Exit fullscreen failed:', err);
+      });
+    }
+  };
+
+  // Lyssna på fullscreen-ändringar
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   if (!showModal) return null;
 
   return (
@@ -222,7 +251,11 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
         <div className="bg-gradient-to-r from-blue-900 to-slate-800 px-8 py-6 border-b border-slate-600">
           <div className="text-center">
             <div className="flex items-center justify-center mb-3">
-              <div className="w-8 h-8 bg-blue-400 rounded-full mr-3 flex items-center justify-center">
+              <div 
+                className="w-8 h-8 bg-blue-400 rounded-full mr-3 flex items-center justify-center cursor-pointer hover:bg-blue-300 transition-colors duration-200 hover:scale-110 transform"
+                onClick={handleLogoClick}
+                title={isFullscreen ? 'Avsluta fullscreen' : 'Aktivera fullscreen'}
+              >
                 <span className="text-slate-900 font-bold text-lg">Å</span>
               </div>
               <h1 className="text-2xl font-bold text-white tracking-wide">
