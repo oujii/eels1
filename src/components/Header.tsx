@@ -26,7 +26,11 @@ const Header = () => {
       <div className="flex items-center justify-between px-8 py-4">
         {/* Logo och titel */}
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-secondary flex items-center justify-center">
+          <div 
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-secondary flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 hover:shadow-lg"
+            onClick={() => window.location.reload()}
+            title="Ladda om sidan"
+          >
             <span className="text-2xl font-bold text-white">Å</span>
           </div>
           <div>
