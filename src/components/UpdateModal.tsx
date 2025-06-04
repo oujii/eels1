@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
 
 interface UpdateModalProps {
   isOpen: boolean;
@@ -9,6 +8,24 @@ interface UpdateModalProps {
 }
 
 type UpdateStep = 'intro' | 'license' | 'features' | 'installation' | 'complete';
+
+// Step title mapping for dynamic header
+const getStepTitle = (step: UpdateStep): string => {
+  switch (step) {
+    case 'intro':
+      return 'Programvaruuppdatering';
+    case 'license':
+      return 'Licensavtal för Matningsmodul';
+    case 'features':
+      return 'Nya Funktioner';
+    case 'installation':
+      return 'Installationsförlopp';
+    case 'complete':
+      return 'Uppdatering Slutförd';
+    default:
+      return 'Programvaruuppdatering';
+  }
+};
 
 const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, onComplete }) => {
   const [currentStep, setCurrentStep] = useState<UpdateStep>('intro');
@@ -223,71 +240,85 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-      {/* Overlay med backdrop blur */}
+      {/* Professional dimmed overlay */}
       <div 
-        className="absolute inset-0 bg-gradient-to-br from-[#0a1a2a]/95 via-[#1a2332]/95 to-[#0f1419]/95 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={(e) => e.stopPropagation()}
       />
       
-      <div className="relative bg-gray-900 rounded-lg shadow-2xl max-w-3xl w-full mx-4 h-[70vh] flex flex-col">
-        {/* Header - Fixed height */}
-        <div className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex-shrink-0">
-          <h2 className="text-2xl font-bold text-white h-8 flex items-center">
-            {currentStep === 'intro' && 'KRITISK UPPDATERING KRÄVS - Matningsmodulen'}
-            {currentStep === 'license' && 'Licensavtal'}
-            {currentStep === 'features' && 'Nya Fantastiska Funktioner - Installeras'}
-            {currentStep === 'installation' && 'Installerar uppdatering'}
-            {currentStep === 'complete' && 'Uppdatering slutförd'}
-          </h2>
-        </div>
-
-        {/* Content - Fixed height with internal scrolling */}
-        <div className="flex-1 p-8 overflow-y-auto relative">
-          {/* Content container with fixed dimensions */}
-          <div className="h-full flex flex-col justify-center min-h-[250px]">
-          {/* Skeleton/Placeholder structure to maintain consistent dimensions */}
-          {currentStep === 'intro' && <IntroStep />}
-
-          {currentStep === 'license' && (
-            <LicenseStep 
-              licenseText={licenseText}
-              licenseScrollRef={licenseScrollRef}
-              handleLicenseScroll={handleLicenseScroll}
-              licenseAccepted={licenseAccepted}
-              setLicenseAccepted={setLicenseAccepted}
-              licenseScrolledToBottom={licenseScrolledToBottom}
-            />
-          )}
-
-          {currentStep === 'features' && (
-            <FeaturesStep 
-              features={features}
-              currentFeature={currentFeature}
-              featureCarouselCompleted={featureCarouselCompleted}
-              backgroundInstallStarted={backgroundInstallStarted}
-              installProgress={installProgress}
-            />
-          )}
-
-          {currentStep === 'installation' && <InstallationStep installProgress={installProgress} />}
-
-          {currentStep === 'complete' && <CompleteStep />}
+      {/* Modal container with corporate styling */}
+      <div className="relative bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full mx-4 h-[75vh] flex flex-col border border-slate-600/50">
+        
+        {/* Header Section with ÅlControl branding */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-8 py-6 border-b border-slate-600/50 flex-shrink-0 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            {/* ÅlControl Logo */}
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-xl">Å</span>
+              </div>
+              <div className="text-white">
+                <span className="text-xl font-bold tracking-wide">ÅlControl</span>
+                <span className="text-blue-300 text-xl">™</span>
+              </div>
+            </div>
+            
+            {/* Dynamic Title */}
+            <h2 className="text-xl font-semibold text-white tracking-wide">
+              {getStepTitle(currentStep)}
+            </h2>
           </div>
         </div>
 
-        {/* Footer with larger touch-friendly button - Fixed position */}
-        <div className="bg-gray-800 px-8 py-6 border-t border-gray-700 flex-shrink-0">
-          <button
-            onClick={handleNext}
-            disabled={!canProceed()}
-            className={`w-full py-4 px-8 text-xl font-semibold rounded-lg transition-all duration-200 ${
-              canProceed()
-                ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
-                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            {currentStep === 'complete' ? 'Slutför' : 'Nästa'}
-          </button>
+        {/* Central Content Area */}
+        <div className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-800/50 to-slate-900/50">
+          <div className="h-full flex flex-col justify-center min-h-[300px]">
+            {currentStep === 'intro' && <IntroStep />}
+            {currentStep === 'license' && (
+              <LicenseStep 
+                licenseText={licenseText}
+                licenseScrollRef={licenseScrollRef}
+                handleLicenseScroll={handleLicenseScroll}
+                licenseAccepted={licenseAccepted}
+                setLicenseAccepted={setLicenseAccepted}
+                licenseScrolledToBottom={licenseScrolledToBottom}
+              />
+            )}
+            {currentStep === 'features' && (
+              <FeaturesStep 
+                features={features}
+                currentFeature={currentFeature}
+                featureCarouselCompleted={featureCarouselCompleted}
+                backgroundInstallStarted={backgroundInstallStarted}
+                installProgress={installProgress}
+              />
+            )}
+            {currentStep === 'installation' && <InstallationStep installProgress={installProgress} />}
+            {currentStep === 'complete' && <CompleteStep />}
+          </div>
+        </div>
+
+        {/* Footer Navigation Area */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-8 py-6 border-t border-slate-600/50 flex-shrink-0 rounded-b-2xl">
+          <div className="flex justify-between items-center">
+            {/* Secondary info area (can be used for step indicators, etc.) */}
+            <div className="text-slate-400 text-sm">
+              Steg {Object.keys({intro: 1, license: 2, features: 3, installation: 4, complete: 5}).findIndex(key => key === currentStep) + 1} av 5
+            </div>
+            
+            {/* Primary action button */}
+            <button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className={`px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-200 min-w-[120px] ${
+                canProceed()
+                  ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                  : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              {currentStep === 'complete' ? 'Slutför' : 'Nästa'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -296,185 +327,329 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
 
 // Extracted components
 const IntroStep = () => (
-  <div className="text-center h-full flex flex-col justify-center">
-    <div className="max-w-2xl mx-auto">
-      <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+  <div className="h-full flex flex-col justify-between py-4">
+    {/* Top section with icon */}
+    <div className="flex justify-center">
+      <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl">
+        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
         </svg>
       </div>
-      <h3 className="text-4xl font-bold text-red-400 mb-6 animate-pulse">OMEDELBAR ÅTGÄRD KRÄVS</h3>
-      <div className="bg-red-900 bg-opacity-50 border-2 border-red-500 rounded-lg p-6 mb-6">
-        <p className="text-red-200 text-xl font-semibold mb-4">
-          ⚠️ SYSTEMKRITISK UPPDATERING MÅSTE INSTALLERAS NU
+    </div>
+    
+    {/* Main content section - grows to fill space */}
+    <div className="flex-grow flex flex-col justify-center text-center px-4">
+      <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-8 text-left max-w-2xl mx-auto">
+        <p className="text-slate-200 mb-6 text-lg leading-relaxed">
+          En ny version av <strong className="text-blue-300">Matningsmodulen</strong> är tillgänglig med förbättringar och nya funktioner.
         </p>
-        <p className="text-red-300 text-lg leading-relaxed mb-4">
-          Matningsmodulen har identifierat kritiska säkerhetsbrister som MÅSTE åtgärdas omedelbart. 
-          Fortsatt drift utan denna uppdatering kan resultera i:
-        </p>
-        <ul className="text-red-300 text-left space-y-2 mb-4">
-          <li>• Systemkrasch och dataförlust</li>
-          <li>• Säkerhetsrisker för ålbeståndet</li>
-          <li>• Potentiell skada på utrustning</li>
-          <li>• Förlust av garantiskydd</li>
-        </ul>
+        <div className="space-y-3">
+          <div className="flex items-start space-x-3">
+            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+            <p className="text-slate-300">Förbättrad prestanda och stabilitet</p>
+          </div>
+          <div className="flex items-start space-x-3">
+            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+            <p className="text-slate-300">Nya avancerade matningsfunktioner</p>
+          </div>
+          <div className="flex items-start space-x-3">
+            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+            <p className="text-slate-300">Säkerhetsförbättringar och buggfixar</p>
+          </div>
+        </div>
       </div>
-      <p className="text-yellow-400 text-lg font-bold animate-bounce">
-        DENNA UPPDATERING KAN INTE SKJUTAS UPP!
+    </div>
+    
+    {/* Bottom section with call to action */}
+    <div className="text-center">
+      <p className="text-slate-300 text-lg">
+        Klicka på <strong className="text-blue-300">Nästa</strong> för att påbörja uppdateringsprocessen.
       </p>
     </div>
   </div>
 );
 
 const LicenseStep = ({ licenseText, licenseScrollRef, handleLicenseScroll, licenseAccepted, setLicenseAccepted, licenseScrolledToBottom }: any) => (
-  <div className="h-full flex flex-col">
+  <div className="h-full flex flex-col py-2">
+    {/* Compact header - removed redundant title since modal header shows "Licensavtal för Matningsmodul" */}
+    <div className="text-center mb-4">
+      <p className="text-slate-300">Matningsmodul v2.1 - Användarvillkor</p>
+    </div>
+    
+    {/* License text area - grows to fill available space */}
     <div 
       ref={licenseScrollRef}
       onScroll={handleLicenseScroll}
-      className="bg-gray-800 p-4 rounded-lg mb-4 flex-1 overflow-y-auto"
+      className="flex-1 bg-slate-800/50 border border-slate-600 rounded-xl p-6 overflow-y-auto text-sm text-slate-200 leading-relaxed shadow-inner min-h-[300px]"
     >
-      <pre className="text-gray-300 text-sm whitespace-pre-wrap font-mono">
-        {licenseText}
-      </pre>
+      <pre className="whitespace-pre-wrap font-mono">{licenseText}</pre>
     </div>
-    <div className="flex-shrink-0">
-      <div className="flex items-center mb-2">
+    
+    {/* Acceptance section - fixed at bottom */}
+    <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600 mt-4 flex-shrink-0">
+      <div className="flex items-start space-x-4">
         <input
           type="checkbox"
-          id="license-accept"
+          id="licenseAccept"
           checked={licenseAccepted}
           onChange={(e) => setLicenseAccepted(e.target.checked)}
           disabled={!licenseScrolledToBottom}
-          className={`mr-3 h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 ${
-            !licenseScrolledToBottom ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-          }`}
+          className="w-5 h-5 text-blue-600 bg-slate-700 border-slate-500 rounded focus:ring-blue-500 focus:ring-2 mt-1"
         />
-        <label htmlFor="license-accept" className={`text-gray-300 ${
-          !licenseScrolledToBottom ? 'opacity-50' : ''
-        }`}>
-          Jag har läst och godkänner villkoren i licensavtalet
-        </label>
+        <div className="flex-1">
+          <label 
+            htmlFor="licenseAccept" 
+            className={`text-lg font-medium block ${
+              licenseScrolledToBottom ? 'text-white cursor-pointer' : 'text-slate-500 cursor-not-allowed'
+            }`}
+          >
+            Jag accepterar licensavtalet och användarvillkoren
+          </label>
+          {!licenseScrolledToBottom && (
+            <p className="text-blue-400 text-sm mt-2 flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Vänligen läs igenom hela licensavtalet för att fortsätta
+            </p>
+          )}
+        </div>
       </div>
-      {!licenseScrolledToBottom && (
-        <p className="text-yellow-400 text-sm animate-pulse">
-          ⚠️ Du måste scrolla ner och läsa hela avtalet innan du kan acceptera
-        </p>
-      )}
     </div>
   </div>
 );
 
 const FeaturesStep = ({ features, currentFeature, featureCarouselCompleted, backgroundInstallStarted, installProgress }: any) => (
-  <div className="text-center h-full flex flex-col">
-    <div className="flex-1 flex flex-col justify-center">
-      <div className="w-full h-80 bg-gray-700 rounded-lg mb-6 flex items-center justify-center overflow-hidden relative">
-        <img 
-          src={features[currentFeature].image} 
-          alt={features[currentFeature].title}
-          className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out"
-          style={{ opacity: 1 }}
-        />
-        {!featureCarouselCompleted && (
-          <div className="absolute top-2 right-2 text-xs text-yellow-400 animate-pulse">
-            ...
-          </div>
-        )}
-      </div>
-      <h3 className="text-3xl font-bold text-white mb-4 transition-opacity duration-1000 h-12 flex items-center justify-center">
-        {features[currentFeature].title}
-      </h3>
-      <p className="text-gray-300 text-xl leading-relaxed transition-opacity duration-1000 h-16 flex items-center justify-center">
-        {features[currentFeature].description}
-      </p>
+  <div className="h-full flex flex-col py-2">
+    {/* Removed redundant title since modal header shows "Nya Funktioner" */}
+    <div className="text-center mb-4">
+      <p className="text-slate-300">Upptäck förbättringarna i v2.1</p>
     </div>
-    <div className="flex-shrink-0">
-      <div className="flex justify-center space-x-2 mb-4">
-        {features.map((_: any, index: number) => (
-          <div
-            key={index}
-            className={`w-4 h-4 rounded-full transition-all duration-500 ${
-              index === currentFeature ? 'bg-blue-500 scale-125' : 'bg-gray-600'
-            }`}
-          />
-        ))}
-      </div>
-      <div className="h-20">
-        {backgroundInstallStarted && (
-          <div className="p-3 bg-gray-800 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">Steg 1 av 3: Initierar uppdatering...</span>
-              <span className="text-xs text-yellow-400">{Math.round(installProgress)}%</span>
+    
+    {!featureCarouselCompleted ? (
+      <div className="flex-1 flex flex-col justify-between">
+        {/* Main feature display - grows to fill space */}
+        <div className="flex-1 flex flex-col justify-center">
+          <div className="text-center max-w-4xl mx-auto h-full">
+            <div className="relative mb-4 h-full max-h-[450px]">
+              <div className="bg-slate-700/50 rounded-2xl p-2 border border-slate-600 h-full">
+                <img 
+                  src={features[currentFeature].image} 
+                  alt={features[currentFeature].title}
+                  className="w-full h-full object-cover rounded-xl shadow-lg min-h-[350px]"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent rounded-2xl" />
+              <div className="absolute bottom-6 left-6 right-6">
+                <h4 className="text-2xl font-bold text-white mb-3">{features[currentFeature].title}</h4>
+                <p className="text-slate-200 text-lg leading-relaxed">{features[currentFeature].description}</p>
+              </div>
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-2">
+          </div>
+        </div>
+        
+        {/* Indicators and status at bottom */}
+        <div className="text-center">
+          <div className="flex justify-center space-x-3 mb-4">
+            {features.map((_: any, index: number) => (
+              <div
+                key={index}
+                className={`w-3 h-3 rounded-full transition-all duration-500 ${
+                  index === currentFeature ? 'bg-blue-400 scale-150 shadow-lg' : 'bg-slate-600'
+                }`}
+              />
+            ))}
+          </div>
+          
+          <p className="text-slate-400 text-sm flex items-center justify-center">
+            <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Installerar nya funktioner...
+          </p>
+        </div>
+      </div>
+    ) : (
+      <div className="flex-1 flex flex-col justify-between">
+        {/* Completion icon and message */}
+        <div className="flex-1 flex flex-col justify-center text-center">
+          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h4 className="text-2xl font-bold text-white mb-4">Funktionsöversikt Slutförd</h4>
+          <p className="text-slate-300 text-lg">Förbereder installation av nya funktioner...</p>
+        </div>
+        
+        {/* Progress bar at bottom - wider and more prominent */}
+        {backgroundInstallStarted && (
+          <div className="bg-slate-700/50 rounded-xl p-6 border border-slate-600 max-w-2xl mx-auto w-full">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-slate-200 font-medium text-lg">Förbereder installation...</span>
+              <span className="text-blue-400 font-bold text-xl">{Math.round(installProgress)}%</span>
+            </div>
+            <div className="w-full bg-slate-800 rounded-full h-4 shadow-inner">
               <div 
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                className="bg-gradient-to-r from-blue-500 to-blue-400 h-4 rounded-full transition-all duration-300 shadow-sm"
                 style={{ width: `${installProgress}%` }}
               />
             </div>
           </div>
         )}
       </div>
-    </div>
+    )}
   </div>
 );
 
 const InstallationStep = ({ installProgress }: any) => (
-  <div className="text-center h-full flex flex-col justify-center">
-    <div className="max-w-md mx-auto">
-      <div className="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
-        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
+  <div className="h-full flex flex-col justify-between py-4">
+    {/* Top section with animated icon */}
+    <div className="flex justify-center">
+      <div className="relative">
+        <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl">
+          <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+        </div>
+        <div className="absolute -inset-2 bg-blue-500/20 rounded-full animate-ping"></div>
       </div>
-      <h3 className="text-xl font-bold text-white mb-4">
-        Installerar uppdatering för Matningsmodulen...
-      </h3>
-      <p className="text-gray-300 mb-6">
-        Vänligen vänta medan vi installerar de senaste förbättringarna. 
-        Denna process kan ta några minuter.
-      </p>
-      <div className="w-full bg-gray-700 rounded-full h-4 mb-4">
-        <div 
-          className="bg-gradient-to-r from-blue-500 to-green-500 h-4 rounded-full transition-all duration-300 ease-out"
-          style={{ width: `${installProgress}%` }}
-        />
+    </div>
+    
+    {/* Main content section - grows to fill space */}
+    <div className="flex-1 flex flex-col justify-center">
+      {/* Removed redundant title since modal header shows "Installationsförlopp" */}
+      <div className="text-center max-w-lg mx-auto mb-8">
+        <p className="text-slate-300 text-lg leading-relaxed">
+          Systemet uppdateras med de senaste förbättringarna. Detta kan ta några minuter.
+        </p>
       </div>
-      <p className="text-gray-400 text-sm mb-4">
-        {Math.round(installProgress)}% slutfört
-      </p>
-      <div className="h-16">
-        {installProgress >= 90 && (
-          <div className="p-3 bg-red-900 bg-opacity-50 rounded-lg border border-red-700">
-            <p className="text-red-400 text-sm font-semibold">
-              ⚠️ Installation har fastnat vid 90%
+      
+      {/* Enhanced progress section - wider and more prominent */}
+      <div className="w-full max-w-3xl mx-auto bg-slate-700/50 rounded-2xl p-8 border border-slate-600">
+        <div className="flex items-center justify-between mb-6">
+          <span className="text-slate-200 font-medium text-xl">Installationsförlopp</span>
+          <span className="text-blue-400 font-bold text-3xl">{Math.round(installProgress)}%</span>
+        </div>
+        
+        <div className="w-full bg-slate-800 rounded-full h-5 shadow-inner mb-6">
+          <div 
+            className="bg-gradient-to-r from-blue-500 via-blue-400 to-green-400 h-5 rounded-full transition-all duration-500 ease-out shadow-sm"
+            style={{ width: `${installProgress}%` }}
+          />
+        </div>
+        
+        <div className="text-center">
+          {installProgress < 30 && (
+            <p className="text-slate-400 flex items-center justify-center text-lg">
+              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Förbereder systemkomponenter...
             </p>
-            <p className="text-red-300 text-xs mt-1">
-              Detta är ett känt problem. Vänligen kontakta teknisk support.
+          )}
+          
+          {installProgress >= 30 && installProgress < 70 && (
+            <p className="text-slate-400 flex items-center justify-center text-lg">
+              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Installerar nya funktioner...
             </p>
-          </div>
-        )}
+          )}
+          
+          {installProgress >= 70 && installProgress < 90 && (
+            <p className="text-slate-400 flex items-center justify-center text-lg">
+              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Konfigurerar systemet...
+            </p>
+          )}
+          
+          {installProgress >= 90 && installProgress < 100 && (
+            <p className="text-blue-400 flex items-center justify-center font-medium text-lg">
+              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Slutför installation...
+            </p>
+          )}
+        </div>
       </div>
     </div>
   </div>
 );
 
 const CompleteStep = () => (
-  <div className="text-center h-full flex flex-col justify-center">
-    <div className="max-w-2xl mx-auto">
-      <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
+  <div className="h-full flex flex-col justify-between py-4">
+    {/* Top section with success icon */}
+    <div className="flex justify-center">
+      <div className="relative">
+        <div className="w-28 h-28 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl">
+          <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div className="absolute -inset-3 bg-green-500/20 rounded-full animate-pulse"></div>
       </div>
-      <h3 className="text-2xl font-bold text-white mb-4">
-        Uppdatering slutförd!
-      </h3>
-      <p className="text-gray-300 text-lg leading-relaxed mb-4">
-        Matningsmodulen är nu optimerad och redo att användas med alla nya funktioner aktiverade. 
-        Du kan nu komma åt den förbättrade nätkontrollen.
-      </p>
-      <p className="text-green-400 font-semibold">
-        Välkommen till framtiden för ålmatning!
+    </div>
+    
+    {/* Main content section - grows to fill space */}
+    <div className="flex-1 flex flex-col justify-center">
+      {/* Removed redundant title since modal header shows "Uppdatering Slutförd" */}
+      <div className="text-center max-w-2xl mx-auto mb-8">
+        <p className="text-slate-300 text-xl leading-relaxed">
+          <strong className="text-green-400">Matningsmodulen v2.1</strong> har installerats framgångsrikt. 
+          Alla nya funktioner och förbättringar är nu tillgängliga.
+        </p>
+      </div>
+      
+      {/* Feature highlights grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl w-full mx-auto mb-6">
+        <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-5 text-center">
+          <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h4 className="text-white font-semibold mb-2">Förbättrad Prestanda</h4>
+          <p className="text-slate-400 text-sm">Snabbare responstider och optimerad systemanvändning</p>
+        </div>
+        
+        <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-5 text-center">
+          <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h4 className="text-white font-semibold mb-2">Säkerhetsuppdateringar</h4>
+          <p className="text-slate-400 text-sm">Förstärkt säkerhet och skydd mot sårbarheter</p>
+        </div>
+        
+        <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-5 text-center">
+          <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+          </div>
+          <h4 className="text-white font-semibold mb-2">Nya Funktioner</h4>
+          <p className="text-slate-400 text-sm">Avancerade matningsalgorithmer och kontrollmöjligheter</p>
+        </div>
+      </div>
+    </div>
+    
+    {/* Bottom section with next steps */}
+    <div className="bg-gradient-to-r from-slate-700/50 to-slate-600/50 border border-slate-600 rounded-xl p-6 max-w-2xl mx-auto w-full">
+      <h4 className="text-white font-semibold mb-3 flex items-center">
+        <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Nästa Steg
+      </h4>
+      <p className="text-slate-300 text-sm leading-relaxed">
+        Systemet kommer att starta om automatiskt för att aktivera alla nya funktioner. 
+        Efter omstarten kommer du att kunna använda alla förbättringar i Matningsmodulen.
       </p>
     </div>
   </div>

@@ -11,6 +11,8 @@ const initialNets: NetInfo[] = [
   { id: 'net-b', name: 'Nätstation Beta', status: 'Sänkt, 50% Fyllt', depth: 10, maxDepth: 20 },
   { id: 'net-c', name: 'Nätstation Gamma', status: 'Uppfällt, Service', depth: 0, maxDepth: 15 },
   { id: 'net-d', name: 'Nätstation Delta', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 25 },
+  { id: 'net-e', name: 'Nätstation Epsilon', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 10 },
+  { id: 'net-f', name: 'Nätstation Zeta', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 15 },
 ];
 
 const FeedingManagementPage: React.FC = () => {
