@@ -172,12 +172,12 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
     }
   }, [currentStep, isProgressBarStuck]);
 
-  // 4-second timer for license step
+  // 7-second timer for license step
   useEffect(() => {
     if (currentStep === 'license') {
       const timer = setTimeout(() => {
         setLicenseTimerCompleted(true);
-      }, 4000); // 4 seconds
+      }, 7000); // 7 seconds
       
       return () => clearTimeout(timer);
     } else {
@@ -261,16 +261,8 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
         }
         break;
       case 'featuresAndInstallation':
-        if (isProgressBarStuck) {
-          // Increment click counter when progress bar is stuck
-          const newClickCount = stuckNextClickCount + 1;
-          setStuckNextClickCount(newClickCount);
-          
-          // After 5 clicks, proceed to complete step
-          if (newClickCount >= 5) {
-            setCurrentStep('complete');
-            setStuckNextClickCount(0); // Reset counter
-          }
+        if (canProceed()) {
+          setCurrentStep('complete');
         }
         break;
       case 'complete':
