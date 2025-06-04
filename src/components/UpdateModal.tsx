@@ -7,7 +7,7 @@ interface UpdateModalProps {
   onComplete: () => void;
 }
 
-type UpdateStep = 'intro' | 'license' | 'features' | 'installation' | 'complete';
+type UpdateStep = 'intro' | 'license' | 'featuresAndInstallation' | 'complete';
 
 // Step title mapping for dynamic header
 const getStepTitle = (step: UpdateStep): string => {
@@ -16,10 +16,8 @@ const getStepTitle = (step: UpdateStep): string => {
       return 'Programvaruuppdatering';
     case 'license':
       return 'Licensavtal för Matningsmodul';
-    case 'features':
-      return 'Nya Funktioner';
-    case 'installation':
-      return 'Installationsförlopp';
+    case 'featuresAndInstallation':
+      return 'Nya Funktioner & Installation Pågår';
     case 'complete':
       return 'Uppdatering Slutförd';
     default:
@@ -32,12 +30,19 @@ const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, onComplete }) => {
   const [licenseAccepted, setLicenseAccepted] = useState(false);
   const [licenseScrolledToBottom, setLicenseScrolledToBottom] = useState(false);
   const [licenseTimerCompleted, setLicenseTimerCompleted] = useState(false);
-  const [currentFeature, setCurrentFeature] = useState(0);
-  const [installProgress, setInstallProgress] = useState(0);
-  const [isInstalling, setIsInstalling] = useState(false);
-  const [featureCarouselStarted, setFeatureCarouselStarted] = useState(false);
-  const [featureCarouselCompleted, setFeatureCarouselCompleted] = useState(false);
-  const [backgroundInstallStarted, setBackgroundInstallStarted] = useState(false);
+  
+  // State for consolidated featuresAndInstallation step
+  const [currentFeatureSlide, setCurrentFeatureSlide] = useState(0);
+  const [featureCarouselCyclesDone, setFeatureCarouselCyclesDone] = useState(0);
+  const [installationProgress, setInstallationProgress] = useState(0);
+  const [installationSubText, setInstallationSubText] = useState('Verifierar systemfiler...');
+  const [isProgressBarStuck, setIsProgressBarStuck] = useState(false);
+  const [imageOpacity, setImageOpacity] = useState(1);
+  const [stuckNextClickCount, setStuckNextClickCount] = useState(0);
+  
+  // Modal visibility delay
+  const [modalContentVisible, setModalContentVisible] = useState(false);
+  
   const licenseScrollRef = useRef<HTMLDivElement>(null);
 
   const licenseText = `LICENSAVTAL FÖR ÅLCONTROL PRO 2025
@@ -147,6 +152,26 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
     }
   };
 
+  // Modal content visibility delay
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        setModalContentVisible(true);
+      }, 2000); // 2 second delay
+      
+      return () => clearTimeout(timer);
+    } else {
+      setModalContentVisible(false);
+    }
+  }, [isOpen]);
+
+  // Reset stuck click counter when leaving featuresAndInstallation step or when no longer stuck
+  useEffect(() => {
+    if (currentStep !== 'featuresAndInstallation' || !isProgressBarStuck) {
+      setStuckNextClickCount(0);
+    }
+  }, [currentStep, isProgressBarStuck]);
+
   // 4-second timer for license step
   useEffect(() => {
     if (currentStep === 'license') {
@@ -160,66 +185,70 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
     }
   }, [currentStep]);
 
-  // Auto-play feature carousel with fade effect
+  // Consolidated featuresAndInstallation step logic
   useEffect(() => {
-    if (currentStep === 'features' && !featureCarouselCompleted) {
-      const interval = setInterval(() => {
-        setCurrentFeature(prev => {
-          const next = (prev + 1) % features.length;
-          if (next === 0) {
-            // Completed one full cycle
-            setFeatureCarouselCompleted(true);
-            clearInterval(interval);
-          }
-          return next;
-        });
-      }, 4000); // Increased to 4 seconds for fade effect
+    if (currentStep === 'featuresAndInstallation') {
+      // Image carousel with fade effect
+      const carouselInterval = setInterval(() => {
+        setImageOpacity(0); // Start fade out
+        
+        setTimeout(() => {
+          setCurrentFeatureSlide(prev => {
+            const next = (prev + 1) % features.length;
+            if (next === 0) {
+              setFeatureCarouselCyclesDone(cycles => cycles + 1);
+            }
+            return next;
+          });
+          setImageOpacity(1); // Fade back in
+        }, 500); // 500ms fade duration
+      }, 3500); // 3.5 seconds per slide
       
-      return () => clearInterval(interval);
-    }
-  }, [currentStep, featureCarouselCompleted, features.length]);
-
-  // Start background installation during feature carousel
-  useEffect(() => {
-    if (currentStep === 'features' && !backgroundInstallStarted) {
-      const timer = setTimeout(() => {
-        setBackgroundInstallStarted(true);
-      }, 2000); // Start after 2 seconds
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentStep, backgroundInstallStarted]);
-
-  // Simulate erratic installation progress
-  useEffect(() => {
-    if (backgroundInstallStarted || currentStep === 'installation') {
-      const interval = setInterval(() => {
-        setInstallProgress(prev => {
+      // Installation progress simulation
+      const progressInterval = setInterval(() => {
+        setInstallationProgress(prev => {
           if (prev < 15) {
             return prev + Math.random() * 2; // Very slow start
           } else if (prev < 90) {
             return 90; // Sudden jump to 90%
           } else {
+            setIsProgressBarStuck(true);
             return 90; // Stuck at 90%
           }
         });
-      }, 500);
+      }, 800);
       
-      return () => clearInterval(interval);
-    }
-  }, [backgroundInstallStarted, currentStep]);
-
-  // Auto-advance from installation to complete after being stuck
-  useEffect(() => {
-    if (currentStep === 'installation' && installProgress >= 90) {
-      const timer = setTimeout(() => {
-        setInstallProgress(100);
-        setCurrentStep('complete');
-      }, 8000); // Wait 8 seconds at 90% before completing
+      // Installation sub-text rotation
+      const subTextMessages = [
+        'Verifierar systemfiler...',
+        'Kompilerar algoritmer...',
+        'Uppdaterar databaser...',
+        'Konfigurerar nätverk...',
+        'Optimerar prestanda...',
+        'Slutför installation...'
+      ];
       
-      return () => clearTimeout(timer);
+      let subTextIndex = 0;
+      const subTextInterval = setInterval(() => {
+        subTextIndex = (subTextIndex + 1) % subTextMessages.length;
+        setInstallationSubText(subTextMessages[subTextIndex]);
+      }, 2500);
+      
+      return () => {
+        clearInterval(carouselInterval);
+        clearInterval(progressInterval);
+        clearInterval(subTextInterval);
+      };
+    } else {
+      // Reset states when leaving the step
+      setCurrentFeatureSlide(0);
+      setFeatureCarouselCyclesDone(0);
+      setInstallationProgress(0);
+      setInstallationSubText('Verifierar systemfiler...');
+      setIsProgressBarStuck(false);
+      setImageOpacity(1);
     }
-  }, [currentStep, installProgress]);
+  }, [currentStep, features.length]);
 
   const handleNext = () => {
     switch (currentStep) {
@@ -228,13 +257,20 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
         break;
       case 'license':
         if ((licenseAccepted && licenseScrolledToBottom) || licenseTimerCompleted) {
-          setCurrentStep('features');
-          setCurrentFeature(0);
+          setCurrentStep('featuresAndInstallation');
         }
         break;
-      case 'features':
-        if (featureCarouselCompleted) {
-          setCurrentStep('installation');
+      case 'featuresAndInstallation':
+        if (isProgressBarStuck) {
+          // Increment click counter when progress bar is stuck
+          const newClickCount = stuckNextClickCount + 1;
+          setStuckNextClickCount(newClickCount);
+          
+          // After 5 clicks, proceed to complete step
+          if (newClickCount >= 5) {
+            setCurrentStep('complete');
+            setStuckNextClickCount(0); // Reset counter
+          }
         }
         break;
       case 'complete':
@@ -245,8 +281,10 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
 
   const canProceed = () => {
     if (currentStep === 'license') return (licenseAccepted && licenseScrolledToBottom) || licenseTimerCompleted;
-    if (currentStep === 'features') return featureCarouselCompleted;
-    if (currentStep === 'installation') return false;
+    if (currentStep === 'featuresAndInstallation') {
+      // Allow clicking Next when progress bar is stuck, but require feature carousel to be done first
+      return featureCarouselCyclesDone >= 2;
+    }
     return true;
   };
 
@@ -262,7 +300,7 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
       />
       
       {/* Modal container with corporate styling */}
-      <div className="relative bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full mx-4 h-[75vh] flex flex-col border border-slate-600/50">
+      <div className="relative bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-6xl w-full mx-4 min-h-[60vh] max-h-[75vh] h-auto flex flex-col border border-slate-600/50">
         
         {/* Header Section with ÅlControl branding */}
         <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-8 py-6 border-b border-slate-600/50 flex-shrink-0 rounded-t-2xl">
@@ -292,28 +330,40 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
         {/* Central Content Area */}
         <div className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-800/50 to-slate-900/50">
           <div className="h-full flex flex-col justify-center min-h-[300px]">
-            {currentStep === 'intro' && <IntroStep />}
-            {currentStep === 'license' && (
-              <LicenseStep 
-                licenseText={licenseText}
-                licenseScrollRef={licenseScrollRef}
-                handleLicenseScroll={handleLicenseScroll}
-                licenseAccepted={licenseAccepted}
-                setLicenseAccepted={setLicenseAccepted}
-                licenseScrolledToBottom={licenseScrolledToBottom}
-              />
+            {modalContentVisible ? (
+              <>
+                {currentStep === 'intro' && <IntroStep />}
+                {currentStep === 'license' && (
+                  <LicenseStep 
+                    licenseText={licenseText}
+                    licenseScrollRef={licenseScrollRef}
+                    handleLicenseScroll={handleLicenseScroll}
+                    licenseAccepted={licenseAccepted}
+                    setLicenseAccepted={setLicenseAccepted}
+                    licenseScrolledToBottom={licenseScrolledToBottom}
+                  />
+                )}
+                {currentStep === 'featuresAndInstallation' && (
+                  <FeaturesAndInstallationStep 
+                    features={features}
+                    currentFeatureSlide={currentFeatureSlide}
+                    featureCarouselCyclesDone={featureCarouselCyclesDone}
+                    installationProgress={installationProgress}
+                    installationSubText={installationSubText}
+                    isProgressBarStuck={isProgressBarStuck}
+                    imageOpacity={imageOpacity}
+                  />
+                )}
+                {currentStep === 'complete' && <CompleteStep />}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-300 text-lg">Förbereder uppdatering...</p>
+                </div>
+              </div>
             )}
-            {currentStep === 'features' && (
-              <FeaturesStep 
-                features={features}
-                currentFeature={currentFeature}
-                featureCarouselCompleted={featureCarouselCompleted}
-                backgroundInstallStarted={backgroundInstallStarted}
-                installProgress={installProgress}
-              />
-            )}
-            {currentStep === 'installation' && <InstallationStep installProgress={installProgress} />}
-            {currentStep === 'complete' && <CompleteStep />}
           </div>
         </div>
 
@@ -322,10 +372,10 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
           <div className="flex justify-between items-center">
             {/* Secondary info area (can be used for step indicators, etc.) */}
             <div className="text-slate-400 text-sm">
-              Steg {Object.keys({intro: 1, license: 2, features: 3, installation: 4, complete: 5}).findIndex(key => key === currentStep) + 1} av 5
+              Steg {Object.keys({intro: 1, license: 2, featuresAndInstallation: 3, complete: 4}).findIndex(key => key === currentStep) + 1} av 4
             </div>
             
-            {/* Primary action button */}
+            {/* Primary action button - always visible */}
             <button
               onClick={handleNext}
               disabled={!canProceed()}
@@ -397,11 +447,11 @@ const LicenseStep = ({ licenseText, licenseScrollRef, handleLicenseScroll, licen
       <p className="text-slate-300">Matningsmodul v2.1 - Användarvillkor</p>
     </div>
     
-    {/* License text area - grows to fill available space */}
+    {/* License text area - fixed height to ensure scrollbar */}
     <div 
       ref={licenseScrollRef}
       onScroll={handleLicenseScroll}
-      className="flex-1 bg-slate-800/50 border border-slate-600 rounded-xl p-6 overflow-y-auto text-sm text-slate-200 leading-relaxed shadow-inner min-h-[300px]"
+      className="bg-slate-800/50 border border-slate-600 rounded-xl p-6 overflow-y-auto text-sm text-slate-200 leading-relaxed shadow-inner h-[350px] max-h-[350px]"
     >
       <pre className="whitespace-pre-wrap font-mono">{licenseText}</pre>
     </div>
@@ -440,160 +490,79 @@ const LicenseStep = ({ licenseText, licenseScrollRef, handleLicenseScroll, licen
   </div>
 );
 
-const FeaturesStep = ({ features, currentFeature, featureCarouselCompleted, backgroundInstallStarted, installProgress }: any) => (
+const FeaturesAndInstallationStep = ({ 
+  features, 
+  currentFeatureSlide, 
+  featureCarouselCyclesDone, 
+  installationProgress, 
+  installationSubText, 
+  isProgressBarStuck, 
+  imageOpacity 
+}: any) => (
   <div className="h-full flex flex-col py-2">
-    {/* Removed redundant title since modal header shows "Nya Funktioner" */}
-    <div className="text-center mb-4">
+    {/* Header */}
+    <div className="text-center mb-4 flex-shrink-0">
       <p className="text-slate-300">Upptäck förbättringarna i v2.1</p>
     </div>
     
-    {!featureCarouselCompleted ? (
-      <div className="flex-1 flex flex-col justify-between">
-        {/* Main feature display - grows to fill space */}
-        <div className="flex-1 flex flex-col justify-center">
-          <div className="text-center max-w-4xl mx-auto h-full">
-            <div className="relative mb-4 h-full max-h-[450px]">
-              <div className="bg-slate-700/50 rounded-2xl p-2 border border-slate-600 h-full">
-                <img 
-                  src={features[currentFeature].image} 
-                  alt={features[currentFeature].title}
-                  className="w-full h-full object-cover rounded-xl shadow-lg min-h-[350px]"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent rounded-2xl" />
-              <div className="absolute bottom-6 left-6 right-6">
-                <h4 className="text-2xl font-bold text-white mb-3">{features[currentFeature].title}</h4>
-                <p className="text-slate-200 text-lg leading-relaxed">{features[currentFeature].description}</p>
-              </div>
-            </div>
+    {/* Image section - fixed height */}
+    <div className="flex-shrink-0 mb-4">
+      <div className="text-center max-w-4xl mx-auto">
+        <div className="relative h-[320px]">
+          <div className="bg-slate-700/50 rounded-2xl p-2 border border-slate-600 h-full">
+            <img 
+              src={features[currentFeatureSlide].image} 
+              alt={features[currentFeatureSlide].title}
+              className="w-full h-full object-cover rounded-xl shadow-lg transition-opacity duration-500"
+              style={{ opacity: imageOpacity }}
+            />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent rounded-2xl" />
+          <div className="absolute bottom-6 left-6 right-6">
+            <h4 className="text-2xl font-bold text-white mb-3">{features[currentFeatureSlide].title}</h4>
+            <p className="text-slate-200 text-lg leading-relaxed">{features[currentFeatureSlide].description}</p>
           </div>
         </div>
-        
-        {/* Indicators and status at bottom */}
-        <div className="text-center">
-          <div className="flex justify-center space-x-3 mb-4">
-            {features.map((_: any, index: number) => (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full transition-all duration-500 ${
-                  index === currentFeature ? 'bg-blue-400 scale-150 shadow-lg' : 'bg-slate-600'
-                }`}
-              />
-            ))}
-          </div>
-          
-          <p className="text-slate-400 text-sm flex items-center justify-center">
-            <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Installerar nya funktioner...
-          </p>
-        </div>
-      </div>
-    ) : (
-      <div className="flex-1 flex flex-col justify-between">
-        {/* Completion icon and message */}
-        <div className="flex-1 flex flex-col justify-center text-center">
-          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h4 className="text-2xl font-bold text-white mb-4">Funktionsöversikt Slutförd</h4>
-          <p className="text-slate-300 text-lg">Förbereder installation av nya funktioner...</p>
-        </div>
-        
-        {/* Progress bar at bottom - wider and more prominent */}
-        {backgroundInstallStarted && (
-          <div className="bg-slate-700/50 rounded-xl p-6 border border-slate-600 max-w-2xl mx-auto w-full">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-slate-200 font-medium text-lg">Förbereder installation...</span>
-              <span className="text-blue-400 font-bold text-xl">{Math.round(installProgress)}%</span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-4 shadow-inner">
-              <div 
-                className="bg-gradient-to-r from-blue-500 to-blue-400 h-4 rounded-full transition-all duration-300 shadow-sm"
-                style={{ width: `${installProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    )}
-  </div>
-);
-
-const InstallationStep = ({ installProgress }: any) => (
-  <div className="h-full flex flex-col justify-between py-4">
-    {/* Top section with animated icon */}
-    <div className="flex justify-center">
-      <div className="relative">
-        <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl">
-          <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-        </div>
-        <div className="absolute -inset-2 bg-blue-500/20 rounded-full animate-ping"></div>
       </div>
     </div>
     
-    {/* Main content section - grows to fill space */}
-    <div className="flex-1 flex flex-col justify-center">
-      {/* Removed redundant title since modal header shows "Installationsförlopp" */}
-      <div className="text-center max-w-lg mx-auto mb-8">
-        <p className="text-slate-300 text-lg leading-relaxed">
-          Systemet uppdateras med de senaste förbättringarna. Detta kan ta några minuter.
-        </p>
-      </div>
-      
-      {/* Enhanced progress section - wider and more prominent */}
-      <div className="w-full max-w-3xl mx-auto bg-slate-700/50 rounded-2xl p-8 border border-slate-600">
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-slate-200 font-medium text-xl">Installationsförlopp</span>
-          <span className="text-blue-400 font-bold text-3xl">{Math.round(installProgress)}%</span>
-        </div>
-        
-        <div className="w-full bg-slate-800 rounded-full h-5 shadow-inner mb-6">
-          <div 
-            className="bg-gradient-to-r from-blue-500 via-blue-400 to-green-400 h-5 rounded-full transition-all duration-500 ease-out shadow-sm"
-            style={{ width: `${installProgress}%` }}
+    {/* Carousel indicators */}
+    <div className="text-center mb-6 flex-shrink-0">
+      <div className="flex justify-center space-x-3">
+        {features.map((_: any, index: number) => (
+          <div
+            key={index}
+            className={`w-3 h-3 rounded-full transition-all duration-500 ${
+              index === currentFeatureSlide ? 'bg-blue-400 scale-150 shadow-lg' : 'bg-slate-600'
+            }`}
           />
+        ))}
+      </div>
+    </div>
+    
+    {/* Installation progress section - at bottom */}
+    <div className="flex-shrink-0">
+      <div className="bg-slate-700/50 rounded-xl p-6 border border-slate-600">
+        <div className="text-center mb-4">
+          <p className="text-slate-300 text-lg">{installationSubText}</p>
         </div>
         
-        <div className="text-center">
-          {installProgress < 30 && (
-            <p className="text-slate-400 flex items-center justify-center text-lg">
-              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Förbereder systemkomponenter...
-            </p>
-          )}
-          
-          {installProgress >= 30 && installProgress < 70 && (
-            <p className="text-slate-400 flex items-center justify-center text-lg">
-              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Installerar nya funktioner...
-            </p>
-          )}
-          
-          {installProgress >= 70 && installProgress < 90 && (
-            <p className="text-slate-400 flex items-center justify-center text-lg">
-              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Konfigurerar systemet...
-            </p>
-          )}
-          
-          {installProgress >= 90 && installProgress < 100 && (
-            <p className="text-blue-400 flex items-center justify-center font-medium text-lg">
-              <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Slutför installation...
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="flex justify-between text-sm text-slate-400 mb-2">
+            <span>Installation</span>
+            <span>{Math.round(installationProgress)}%</span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-3">
+            <div 
+              className={`h-3 rounded-full transition-all duration-300 ${
+                isProgressBarStuck ? 'bg-yellow-500' : 'bg-blue-500'
+              }`}
+              style={{ width: `${installationProgress}%` }}
+            />
+          </div>
+          {isProgressBarStuck && (
+            <p className="text-yellow-400 text-sm mt-2 text-center">
+              Slutför kritiska systemfiler...
             </p>
           )}
         </div>
@@ -602,8 +571,10 @@ const InstallationStep = ({ installProgress }: any) => (
   </div>
 );
 
+
+
 const CompleteStep = () => (
-  <div className="h-full flex flex-col justify-between py-4">
+  <div className="h-full flex flex-col justify-between py-20">
     {/* Top section with success icon */}
     <div className="flex justify-center">
       <div className="relative">
@@ -619,7 +590,7 @@ const CompleteStep = () => (
     {/* Main content section - grows to fill space */}
     <div className="flex-1 flex flex-col justify-center">
       {/* Removed redundant title since modal header shows "Uppdatering Slutförd" */}
-      <div className="text-center max-w-2xl mx-auto mb-8">
+      <div className="text-center max-w-2xl mx-auto mt-16 mb-16">
         <p className="text-slate-300 text-xl leading-relaxed">
           <strong className="text-green-400">Matningsmodulen v2.1</strong> har installerats framgångsrikt. 
           Alla nya funktioner och förbättringar är nu tillgängliga.
@@ -661,18 +632,7 @@ const CompleteStep = () => (
     </div>
     
     {/* Bottom section with next steps */}
-    <div className="bg-gradient-to-r from-slate-700/50 to-slate-600/50 border border-slate-600 rounded-xl p-6 max-w-2xl mx-auto w-full">
-      <h4 className="text-white font-semibold mb-3 flex items-center">
-        <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Nästa Steg
-      </h4>
-      <p className="text-slate-300 text-sm leading-relaxed">
-        Systemet kommer att starta om automatiskt för att aktivera alla nya funktioner. 
-        Efter omstarten kommer du att kunna använda alla förbättringar i Matningsmodulen.
-      </p>
-    </div>
+   
   </div>
 );
 
