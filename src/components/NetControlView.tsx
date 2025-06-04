@@ -30,7 +30,7 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
   
   // Konstanter
   const MAX_DEPTH = selectedNet.maxDepth || 50; // meter
-  const STEP_SIZE_BASE = 0.125; // Kraftigt reducerad grundstorlek för varje "hack" i meter (fyra gånger mindre)
+  const STEP_SIZE_BASE = 0.0625; // Halverad hastighet - ännu långsammare nedsänkning
   const EMERGENCY_HOLD_TIME = 1500; // ms
   const EMERGENCY_SPEED = 10; // meter per sekund
   
@@ -209,10 +209,10 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
             {/* Vinsch A Slider */}
             <div className="flex flex-col items-center flex-1">
               <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch A</label>
-              <div className="flex-grow flex flex-col items-center justify-center relative w-16">
-                {/* Minimalistisk fylld stapel - bredare design */}
+              <div className="flex-grow flex flex-col items-center justify-center relative w-20">
+                {/* Minimalistisk fylld stapel - dubbelt så bred design */}
                 <div 
-                  className="w-14 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                  className="w-20 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
@@ -267,10 +267,10 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
             {/* Vinsch B Slider */}
             <div className="flex flex-col items-center flex-1">
               <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch B</label>
-              <div className="flex-grow flex flex-col items-center justify-center relative w-16">
-                {/* Minimalistisk fylld stapel - bredare design */}
+              <div className="flex-grow flex flex-col items-center justify-center relative w-20">
+                {/* Minimalistisk fylld stapel - dubbelt så bred design */}
                 <div 
-                  className="w-14 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                  className="w-20 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
@@ -348,12 +348,24 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                    }}>
               </div>
               
-              {/* Nät som rör sig vertikalt - startar helt ovanför bassängen */}
+              {/* Nät som rör sig vertikalt - startar helt ovanför bassängen, klipps av vid bassängkanten */}
               <div 
                 className="absolute left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-linear z-20"
                 style={{ 
                   top: `${10 + (netPosition * 0.65)}%`,
-                  width: '40%'
+                  width: '40%',
+                  clipPath: (() => {
+                    // Bassängen börjar vid 70% av höjden (100% - 30% höjd)
+                    const basinTopPercent = 70;
+                    // Beräkna nätets nuvarande position i procent
+                    const netTopPercent = 10 + (netPosition * 0.65);
+                    // Om nätet når bassängkanten, klipp av den del som går in i bassängen
+                    if (netTopPercent + 15 > basinTopPercent) { // 15% är ungefär nätets höjd
+                      const overlapPercent = ((netTopPercent + 15 - basinTopPercent) / 15) * 100;
+                      return `inset(0 0 ${Math.min(100, Math.max(0, overlapPercent))}% 0)`;
+                    }
+                    return 'none';
+                  })()
                 }}
               >
                 <img 
@@ -439,14 +451,8 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                   }}>{winchLoad.toFixed(0)}%</span>
                 </div>
               </div>
-              {/* Skalmarkeringar */}
-              <div className="absolute right-full mr-2 top-0 h-full flex flex-col justify-between text-xs text-slate-400">
-                <span>100%</span>
-                <span>75%</span>
-                <span>50%</span>
-                <span>25%</span>
-                <span>0%</span>
-              </div>
+              {/* Skalmarkeringar - justerad position */}
+             
             </div>
           </div>
           
