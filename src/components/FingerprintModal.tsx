@@ -77,6 +77,7 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
   const [passwordAttempts, setPasswordAttempts] = useState(0);
   const [currentFooterMessage, setCurrentFooterMessage] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   const tips = [
@@ -165,18 +166,19 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
     setPasswordAttempts(newPasswordAttempts);
     
     if (newPasswordAttempts === 1) {
-      // Första försöket - trigga shake animation
-      setIsShaking(true);
-      setTimeout(() => {
-        setIsShaking(false);
-        setPassword('');
-      }, 600);
+      // Första försöket - visa error popup istället för shake
+      setShowErrorPopup(true);
+      setPassword('');
     } else {
       // Andra försöket - acceptera lösenord
       setTimeout(() => {
         onClose(); // Stäng modalen
       }, 1000);
     }
+  };
+
+  const handleCloseErrorPopup = () => {
+    setShowErrorPopup(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -246,17 +248,21 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
         modalState === 'success_reading' 
           ? 'border-blue-400 spinning-border' 
           : 'border-slate-600'
-      } ${isShaking ? 'shake' : ''}`}>
+      }`}>
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-900 to-slate-800 px-8 py-6 border-b border-slate-600">
           <div className="text-center">
             <div className="flex items-center justify-center mb-3">
               <div 
-                className="w-8 h-8 bg-blue-400 rounded-full mr-3 flex items-center justify-center cursor-pointer hover:bg-blue-300 transition-colors duration-200 hover:scale-110 transform"
+                className="w-8 h-8 mr-3 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200"
                 onClick={handleLogoClick}
                 title={isFullscreen ? 'Avsluta fullscreen' : 'Aktivera fullscreen'}
               >
-                <span className="text-slate-900 font-bold text-lg">Å</span>
+                <img 
+                  src="/aea_logo.svg" 
+                  alt="ÅlControl Logo" 
+                  className="w-9 h-9 object-contain"
+                />
               </div>
               <h1 className="text-2xl font-bold text-white tracking-wide">
                 ÅlControl™
@@ -525,7 +531,31 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
              </p>
            </div>
          </div>
-       </div>
+      </div>
+      
+      {/* Error Popup */}
+      {showErrorPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={handleCloseErrorPopup} />
+          <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-600 rounded-xl shadow-2xl max-w-sm w-full mx-4 p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-3">Felaktigt Lösenord</h3>
+              <p className="text-gray-300 mb-6">Det angivna lösenordet är felaktigt. Vänligen försök igen.</p>
+              <button
+                onClick={handleCloseErrorPopup}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

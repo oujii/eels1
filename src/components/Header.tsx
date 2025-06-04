@@ -27,11 +27,15 @@ const Header = () => {
         {/* Logo och titel */}
         <div className="flex items-center space-x-4">
           <div 
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-secondary flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 hover:shadow-lg"
+            className="w-12 h-12 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 hover:shadow-lg"
             onClick={() => window.location.reload()}
             title="Ladda om sidan"
           >
-            <span className="text-2xl font-bold text-white">Å</span>
+            <img 
+              src="/aea_logo.svg" 
+              alt="ÅlControl Logo" 
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-bold glow text-accent">

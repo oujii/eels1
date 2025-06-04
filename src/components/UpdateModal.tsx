@@ -31,6 +31,7 @@ const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, onComplete }) => {
   const [currentStep, setCurrentStep] = useState<UpdateStep>('intro');
   const [licenseAccepted, setLicenseAccepted] = useState(false);
   const [licenseScrolledToBottom, setLicenseScrolledToBottom] = useState(false);
+  const [licenseTimerCompleted, setLicenseTimerCompleted] = useState(false);
   const [currentFeature, setCurrentFeature] = useState(0);
   const [installProgress, setInstallProgress] = useState(0);
   const [isInstalling, setIsInstalling] = useState(false);
@@ -146,6 +147,19 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
     }
   };
 
+  // 4-second timer for license step
+  useEffect(() => {
+    if (currentStep === 'license') {
+      const timer = setTimeout(() => {
+        setLicenseTimerCompleted(true);
+      }, 4000); // 4 seconds
+      
+      return () => clearTimeout(timer);
+    } else {
+      setLicenseTimerCompleted(false);
+    }
+  }, [currentStep]);
+
   // Auto-play feature carousel with fade effect
   useEffect(() => {
     if (currentStep === 'features' && !featureCarouselCompleted) {
@@ -213,7 +227,7 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
         setCurrentStep('license');
         break;
       case 'license':
-        if (licenseAccepted && licenseScrolledToBottom) {
+        if ((licenseAccepted && licenseScrolledToBottom) || licenseTimerCompleted) {
           setCurrentStep('features');
           setCurrentFeature(0);
         }
@@ -230,7 +244,7 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
   };
 
   const canProceed = () => {
-    if (currentStep === 'license') return licenseAccepted && licenseScrolledToBottom;
+    if (currentStep === 'license') return (licenseAccepted && licenseScrolledToBottom) || licenseTimerCompleted;
     if (currentStep === 'features') return featureCarouselCompleted;
     if (currentStep === 'installation') return false;
     return true;
@@ -242,7 +256,8 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Professional dimmed overlay */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ backgroundColor: '#2A6DD3' }}
         onClick={(e) => e.stopPropagation()}
       />
       
@@ -254,8 +269,12 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
           <div className="flex items-center justify-between">
             {/* ÅlControl Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xl">Å</span>
+              <div className="w-10 h-10 flex items-center justify-center shadow-lg">
+                <img 
+                  src="/aea_logo.svg" 
+                  alt="ÅlControl Logo" 
+                  className="w-12 h-12 object-contain"
+                />
               </div>
               <div className="text-white">
                 <span className="text-xl font-bold tracking-wide">ÅlControl</span>
@@ -327,14 +346,16 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
 
 // Extracted components
 const IntroStep = () => (
-  <div className="h-full flex flex-col justify-between py-4">
+  <div className="h-full flex flex-col py-20">
     {/* Top section with icon */}
-    <div className="flex justify-center">
-      <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl">
+    <div className="flex flex-col items-center mb-16">
+      <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl mb-10">
         <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
         </svg>
       </div>
+      {/* Large title text */}
+      <h1 className="text-5xl font-bold text-white mb-4">Dags att uppdatera!</h1>
     </div>
     
     {/* Main content section - grows to fill space */}
@@ -361,7 +382,7 @@ const IntroStep = () => (
     </div>
     
     {/* Bottom section with call to action */}
-    <div className="text-center">
+    <div className="text-center mt-6">
       <p className="text-slate-300 text-lg">
         Klicka på <strong className="text-blue-300">Nästa</strong> för att påbörja uppdateringsprocessen.
       </p>
