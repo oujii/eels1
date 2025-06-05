@@ -201,124 +201,50 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
       {/* Huvudlayout - Tre kolumner */}
       <div className="flex-grow grid grid-cols-3 gap-6 h-full">
         
-        {/* VÄNSTERPANEL - Effektreglage */}
+        {/* VÄNSTERPANEL - TOM (eller framtida innehåll) */}
         <div className="bg-slate-900/70 p-4 rounded-lg shadow-inner flex flex-col">
-          <h3 className="text-lg font-semibold mb-4 text-sky-200 text-center">Effektreglage</h3>
-          
-          <div className="flex-grow flex justify-around items-stretch gap-4">
-            {/* Vinsch A Slider */}
-            <div className="flex flex-col items-center flex-1">
-              <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch A</label>
-              <div className="flex-grow flex flex-col items-center justify-center relative w-20">
-                {/* Minimalistisk fylld stapel - dubbelt så bred design */}
-                <div 
-                  className="w-20 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const y = e.clientY - rect.top;
-                    const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
-                    setPowerWinchA(Math.round(percentage));
-                  }}
-                  onMouseMove={(e) => {
-                    if (e.buttons === 1) { // Om vänster musknapp är nedtryckt
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const y = e.clientY - rect.top;
-                      const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
-                      setPowerWinchA(Math.round(percentage));
-                    }
-                  }}
-                >
-                  {/* Fylld del - från botten och uppåt med gradvis färgövergång */}
-                  <div 
-                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out shadow-lg`}
-                    style={{ 
-                      height: `${powerWinchA}%`,
-                      background: powerWinchA >= 50 
-                        ? `linear-gradient(to top, 
-                            ${powerWinchA >= 75 ? '#ef4444' : '#f97316'} 0%, 
-                            ${powerWinchA >= 90 ? '#dc2626' : powerWinchA >= 75 ? '#ea580c' : '#0ea5e9'} 100%)`
-                        : '#0ea5e9',
-                      boxShadow: powerWinchA >= 75 
-                        ? '0 0 20px rgba(239, 68, 68, 0.5)' 
-                        : '0 0 15px rgba(14, 165, 233, 0.3)'
-                    }}
-                  />
-                  {/* Invisible input för tangentbord/tillgänglighet */}
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={powerWinchA}
-                    onChange={(e) => setPowerWinchA(Number(e.target.value))}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    style={{ transform: 'rotate(-90deg)', WebkitAppearance: 'slider-vertical' }}
-                  />
-                </div>
-              </div>
-              <div className="mt-2 text-center">
-                <span className={`text-lg font-bold ${
-                  powerWinchA >= 75 ? 'text-red-400' : powerWinchA >= 50 ? 'text-orange-400' : 'text-white'
-                }`}>
-                  {powerWinchA}%
-                </span>
-              </div>
+          <h3 className="text-lg font-semibold mb-4 text-sky-200 text-center">Övrig Info</h3>
+          {/* Placeholder för framtida innehåll i vänsterpanelen */}
+          <div class="flex-grow text-slate-300 text-sm space-y-3">
+              <p><span class="font-semibold text-sky-100">Senaste inspektion:</span> 2024-07-15</p>
+              <p><span class="font-semibold text-sky-100">Nästa service:</span> 2024-10-01</p>
+              <p><span class="font-semibold text-sky-100">Vattenkvalitet:</span> Godkänd (pH 7.2, Temp 18°C)</p>
+              <p><span class="font-semibold text-sky-100">Syrenivå:</span> 95%</p>
+              <p><span class="font-semibold text-sky-100">Noteringar:</span> Allt ser bra ut. Lätt algbildning på norra sidan.</p>
             </div>
-            
-            {/* Vinsch B Slider */}
-            <div className="flex flex-col items-center flex-1">
-              <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch B</label>
-              <div className="flex-grow flex flex-col items-center justify-center relative w-20">
-                {/* Minimalistisk fylld stapel - dubbelt så bred design */}
-                <div 
-                  className="w-20 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const y = e.clientY - rect.top;
-                    const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
-                    setPowerWinchB(Math.round(percentage));
-                  }}
-                  onMouseMove={(e) => {
-                    if (e.buttons === 1) { // Om vänster musknapp är nedtryckt
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const y = e.clientY - rect.top;
-                      const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
-                      setPowerWinchB(Math.round(percentage));
-                    }
-                  }}
-                >
-                  {/* Fylld del - från botten och uppåt med gradvis färgövergång */}
-                  <div 
-                    className={`absolute bottom-0 w-full transition-all duration-150 ease-out shadow-lg`}
-                    style={{ 
-                      height: `${powerWinchB}%`,
-                      background: powerWinchB >= 50 
-                        ? `linear-gradient(to top, 
-                            ${powerWinchB >= 75 ? '#ef4444' : '#f97316'} 0%, 
-                            ${powerWinchB >= 90 ? '#dc2626' : powerWinchB >= 75 ? '#ea580c' : '#0ea5e9'} 100%)`
-                        : '#0ea5e9',
-                      boxShadow: powerWinchB >= 75 
-                        ? '0 0 20px rgba(239, 68, 68, 0.5)' 
-                        : '0 0 15px rgba(14, 165, 233, 0.3)'
-                    }}
-                  />
-                  {/* Invisible input för tangentbord/tillgänglighet */}
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={powerWinchB}
-                    onChange={(e) => setPowerWinchB(Number(e.target.value))}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    style={{ transform: 'rotate(-90deg)', WebkitAppearance: 'slider-vertical' }}
-                  />
+          {/* Matningsdata Sektion Flyttad Hit */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3 text-sky-200">Matningsdata</h3>
+            <div className="space-y-4">
+              {/* Biomassa */}
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-slate-300">Biomassa</span>
+                  <span className="text-white">4.2 ton</span>
+                </div>
+                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-500" style={{ width: '70%' }} />
                 </div>
               </div>
-              <div className="mt-2 text-center">
-                <span className={`text-lg font-bold ${
-                  powerWinchB >= 75 ? 'text-red-400' : powerWinchB >= 50 ? 'text-orange-400' : 'text-white'
-                }`}>
-                  {powerWinchB}%
-                </span>
+              {/* Tillväxt */}
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-slate-300">Tillväxt</span>
+                  <span className="text-white">2.1%</span>
+                </div>
+                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500" style={{ width: '85%' }} />
+                </div>
+              </div>
+              {/* Foderintag */}
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-slate-300">Foderintag</span>
+                  <span className="text-white">92 kg</span>
+                </div>
+                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-yellow-500" style={{ width: '60%' }} />
+                </div>
               </div>
             </div>
           </div>
@@ -331,9 +257,9 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
             <button
               onClick={() => handleManualStep('up')}
               disabled={isEmergencyMode || currentDepth <= 0}
-              className="w-16 h-16 bg-green-600 hover:bg-green-500 disabled:bg-slate-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50"
+              className="w-full md:w-60 px-10 py-4 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50 text-xl"
             >
-              <ChevronUp size={32} />
+              <ChevronUp size={28} className="mr-2" /> Höj Nät
             </button>
           </div>
           
@@ -399,9 +325,9 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
             <button
               onClick={() => handleManualStep('down')}
               disabled={isEmergencyMode || currentDepth >= MAX_DEPTH}
-              className="w-16 h-16 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50"
+              className="w-full md:w-60 px-10 py-4 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50 text-xl"
             >
-              <ChevronDown size={32} />
+              <ChevronDown size={28} className="mr-2" /> Sänk Nät
             </button>
           </div>
         </div>
@@ -426,20 +352,17 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-300">Systemstatus:</span>
-                <span className={`font-medium ${
-                  isEmergencyMode ? 'text-red-400' : 'text-green-400'
-                }`}>
+                <span className={`font-medium ${isEmergencyMode ? 'text-red-400' : 'text-green-400'}`}>
                   {isEmergencyMode ? 'NÖDLÄGE' : 'NORMAL'}
                 </span>
               </div>
             </div>
           </div>
-          
+
           {/* Vinschbelastning */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2 text-sky-200">Vinschbelastning</h3>
             <div className="relative">
-              {/* Vertikal mätare */}
               <div className="w-full h-32 bg-slate-600 rounded-lg overflow-hidden relative">
                 <div 
                   className={`absolute bottom-0 w-full transition-all duration-300 ${getWinchLoadColor()}`}
@@ -451,11 +374,127 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
                   }}>{winchLoad.toFixed(0)}%</span>
                 </div>
               </div>
-              {/* Skalmarkeringar - justerad position */}
-             
             </div>
           </div>
-          
+
+          {/* Effektreglage */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-3 text-sky-200 text-center">Effektreglage</h3>
+            <div className="flex-grow flex justify-around items-stretch gap-4">
+              {/* Vinsch A Slider */}
+              <div className="flex flex-col items-center flex-1">
+                <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch A</label>
+                <div className="flex-grow flex flex-col items-center justify-center relative w-20">
+                  {/* Minimalistisk fylld stapel - dubbelt så bred design */}
+                  <div 
+                    className="w-20 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                      setPowerWinchA(Math.round(percentage));
+                    }}
+                    onMouseMove={(e) => {
+                      if (e.buttons === 1) { // Om vänster musknapp är nedtryckt
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const y = e.clientY - rect.top;
+                        const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                        setPowerWinchA(Math.round(percentage));
+                      }
+                    }}
+                  >
+                    {/* Fylld del - från botten och uppåt med gradvis färgövergång */}
+                    <div 
+                      className={`absolute bottom-0 w-full transition-all duration-150 ease-out shadow-lg`}
+                      style={{ 
+                        height: `${powerWinchA}%`,
+                        background: powerWinchA >= 50 
+                          ? `linear-gradient(to top, 
+                              ${powerWinchA >= 75 ? '#ef4444' : '#f97316'} 0%, 
+                              ${powerWinchA >= 90 ? '#dc2626' : powerWinchA >= 75 ? '#ea580c' : '#0ea5e9'} 100%)`
+                          : '#0ea5e9',
+                        boxShadow: powerWinchA >= 75 
+                          ? '0 0 20px rgba(239, 68, 68, 0.5)' 
+                          : '0 0 15px rgba(14, 165, 233, 0.3)'
+                      }}
+                    />
+                    {/* Invisible input för tangentbord/tillgänglighet */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={powerWinchA}
+                      onChange={(e) => setPowerWinchA(Number(e.target.value))}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      style={{ transform: 'rotate(-90deg)', WebkitAppearance: 'slider-vertical' }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 text-center">
+                  <span className={`text-lg font-bold ${powerWinchA >= 75 ? 'text-red-400' : powerWinchA >= 50 ? 'text-orange-400' : 'text-white'}`}>
+                    {powerWinchA}%
+                  </span>
+                </div>
+              </div>
+              
+              {/* Vinsch B Slider */}
+              <div className="flex flex-col items-center flex-1">
+                <label className="text-sm font-medium mb-2 text-slate-300">Effekt Vinsch B</label>
+                <div className="flex-grow flex flex-col items-center justify-center relative w-20">
+                  {/* Minimalistisk fylld stapel - dubbelt så bred design */}
+                  <div 
+                    className="w-20 h-80 bg-slate-700 rounded-sm relative overflow-hidden cursor-pointer border border-slate-500"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                      setPowerWinchB(Math.round(percentage));
+                    }}
+                    onMouseMove={(e) => {
+                      if (e.buttons === 1) { // Om vänster musknapp är nedtryckt
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const y = e.clientY - rect.top;
+                        const percentage = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+                        setPowerWinchB(Math.round(percentage));
+                      }
+                    }}
+                  >
+                    {/* Fylld del - från botten och uppåt med gradvis färgövergång */}
+                    <div 
+                      className={`absolute bottom-0 w-full transition-all duration-150 ease-out shadow-lg`}
+                      style={{ 
+                        height: `${powerWinchB}%`,
+                        background: powerWinchB >= 50 
+                          ? `linear-gradient(to top, 
+                              ${powerWinchB >= 75 ? '#ef4444' : '#f97316'} 0%, 
+                              ${powerWinchB >= 90 ? '#dc2626' : powerWinchB >= 75 ? '#ea580c' : '#0ea5e9'} 100%)`
+                          : '#0ea5e9',
+                        boxShadow: powerWinchB >= 75 
+                          ? '0 0 20px rgba(239, 68, 68, 0.5)' 
+                          : '0 0 15px rgba(14, 165, 233, 0.3)'
+                      }}
+                    />
+                    {/* Invisible input för tangentbord/tillgänglighet */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={powerWinchB}
+                      onChange={(e) => setPowerWinchB(Number(e.target.value))}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      style={{ transform: 'rotate(-90deg)', WebkitAppearance: 'slider-vertical' }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 text-center">
+                  <span className={`text-lg font-bold ${powerWinchB >= 75 ? 'text-red-400' : powerWinchB >= 50 ? 'text-orange-400' : 'text-white'}`}>
+                    {powerWinchB}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Nödsystem */}
           <div className="mt-auto">
             <h3 className="text-lg font-semibold mb-2 text-red-400 flex items-center">
