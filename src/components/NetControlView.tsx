@@ -320,7 +320,7 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
             
             <div className="relative w-full h-full max-w-md flex flex-col">
               {/* Rep/Kabel från toppen */}
-              <div className="absolute w-1 bg-slate-400 z-10"
+              <div className="absolute w-1 bg-slate-400 z-10 transition-all duration-200 ease-linear"
                    style={{ 
                      left: `calc(50% + ${netHorizontalOffset}%)`,
                      transform: 'translateX(-50%)',
