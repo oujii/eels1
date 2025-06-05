@@ -14,14 +14,21 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
   const [powerWinchB, setPowerWinchB] = useState(0);
   
   // State för nätposition och djup
-  const [currentDepth, setCurrentDepth] = useState(0); // Börja med nätet ovanför bassängen
-  const [netPosition, setNetPosition] = useState(0); // Position i procent (0 = ovanför bassängen, 100 = i bassängen)
+  const [currentDepth, setCurrentDepth] = useState(5); // Börja med nätet 5 meter ner från toppen
+  const [netPosition, setNetPosition] = useState(10); // Position i procent (0 = ovanför bassängen, 100 = i bassängen)
+  const [netHorizontalOffset, setNetHorizontalOffset] = useState(15); // Horisontell offset i procent från centrum (positiv = höger)
   
   // State för vinschbelastning och system
   const [winchLoad, setWinchLoad] = useState(0);
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [isEmergencyPressed, setIsEmergencyPressed] = useState(false);
   const [emergencyProgress, setEmergencyProgress] = useState(0);
+  
+  // State för knappaktivering
+  const [isUpButtonActive, setIsUpButtonActive] = useState(false);
+  const [isDownButtonActive, setIsDownButtonActive] = useState(false);
+  const [isLeftButtonActive, setIsLeftButtonActive] = useState(false);
+  const [isRightButtonActive, setIsRightButtonActive] = useState(false);
   
   // Refs för timers
   const emergencyPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -31,6 +38,8 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
   // Konstanter
   const MAX_DEPTH = selectedNet.maxDepth || 50; // meter
   const STEP_SIZE_BASE = 0.0625; // Halverad hastighet - ännu långsammare nedsänkning
+  const HORIZONTAL_STEP_SIZE = 2; // Horisontell stegstorlek i procent
+  const MAX_HORIZONTAL_OFFSET = 30; // Max horisontell offset i procent
   const EMERGENCY_HOLD_TIME = 1500; // ms
   const EMERGENCY_SPEED = 10; // meter per sekund
   
@@ -55,17 +64,30 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
     }
   }, [powerWinchA, powerWinchB, isEmergencyMode]);
   
-  // Hantera manuell stegvis sänkning
-  const handleManualStep = (direction: 'down' | 'up') => {
+  // Initialisera nätposition baserat på startdjup
+  useEffect(() => {
+    setNetPosition((currentDepth / MAX_DEPTH) * 100);
+  }, []);
+  
+  // Hantera manuell stegvis rörelse
+  const handleManualStep = (direction: 'down' | 'up' | 'left' | 'right') => {
     if (isEmergencyMode) return;
     
-    const stepSize = getEffectiveStepSize();
-    const newDepth = direction === 'down' 
-      ? Math.min(currentDepth + stepSize, MAX_DEPTH)
-      : Math.max(currentDepth - stepSize, 0);
-    
-    setCurrentDepth(newDepth);
-    setNetPosition((newDepth / MAX_DEPTH) * 100);
+    if (direction === 'down' || direction === 'up') {
+      const stepSize = getEffectiveStepSize();
+      const newDepth = direction === 'down' 
+        ? Math.min(currentDepth + stepSize, MAX_DEPTH)
+        : Math.max(currentDepth - stepSize, 0);
+      
+      setCurrentDepth(newDepth);
+      setNetPosition((newDepth / MAX_DEPTH) * 100);
+    } else if (direction === 'left' || direction === 'right') {
+      const newOffset = direction === 'right'
+        ? Math.min(netHorizontalOffset + HORIZONTAL_STEP_SIZE, MAX_HORIZONTAL_OFFSET)
+        : Math.max(netHorizontalOffset - HORIZONTAL_STEP_SIZE, -MAX_HORIZONTAL_OFFSET);
+      
+      setNetHorizontalOffset(newOffset);
+    }
     
     // Tillfällig belastningsökning vid rörelse
     const tempLoad = Math.min(100, calculateWinchLoad() + 20);
@@ -252,32 +274,67 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
 
         {/* MITTENPANEL - Nätvisualisering och Manövrering */}
         <div className="bg-slate-900/70 p-4 rounded-lg shadow-inner flex flex-col">
-          {/* Upp-knapp */}
+          {/* Upp-pil */}
           <div className="flex justify-center mb-4">
             <button
               onClick={() => handleManualStep('up')}
+              onMouseDown={() => setIsUpButtonActive(true)}
+              onMouseUp={() => setIsUpButtonActive(false)}
+              onMouseLeave={() => setIsUpButtonActive(false)}
               disabled={isEmergencyMode || currentDepth <= 0}
-              className="w-full md:w-60 px-10 py-4 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50 text-xl"
+              className={`w-16 h-16 ${isUpButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
             >
-              <ChevronUp size={28} className="mr-2" /> Höj Nät
+              <ChevronUp size={32} />
             </button>
           </div>
           
-          {/* Bassäng och nät visualisering */}
+          {/* Bassäng och nät visualisering med horisontella pilar */}
           <div className="flex-grow relative flex items-center justify-center overflow-hidden">
+            {/* Vänster pil */}
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30">
+              <button
+                onClick={() => handleManualStep('left')}
+                onMouseDown={() => setIsLeftButtonActive(true)}
+                onMouseUp={() => setIsLeftButtonActive(false)}
+                onMouseLeave={() => setIsLeftButtonActive(false)}
+                disabled={isEmergencyMode || netHorizontalOffset <= -MAX_HORIZONTAL_OFFSET}
+                className={`w-16 h-16 ${isLeftButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
+              >
+                <ChevronUp size={32} className="transform -rotate-90" />
+              </button>
+            </div>
+            
+            {/* Höger pil */}
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30">
+              <button
+                onClick={() => handleManualStep('right')}
+                onMouseDown={() => setIsRightButtonActive(true)}
+                onMouseUp={() => setIsRightButtonActive(false)}
+                onMouseLeave={() => setIsRightButtonActive(false)}
+                disabled={isEmergencyMode || netHorizontalOffset >= MAX_HORIZONTAL_OFFSET}
+                className={`w-16 h-16 ${isRightButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
+              >
+                <ChevronUp size={32} className="transform rotate-90" />
+              </button>
+            </div>
+            
             <div className="relative w-full h-full max-w-md flex flex-col">
               {/* Rep/Kabel från toppen */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-slate-400 z-10"
+              <div className="absolute w-1 bg-slate-400 z-10"
                    style={{ 
+                     left: `calc(50% + ${netHorizontalOffset}%)`,
+                     transform: 'translateX(-50%)',
                      top: '5%',
                      height: `${10 + (netPosition * 0.65)}%`
                    }}>
               </div>
               
-              {/* Nät som rör sig vertikalt - startar helt ovanför bassängen, klipps av vid bassängkanten */}
+              {/* Nät som rör sig vertikalt och horisontellt */}
               <div 
-                className="absolute left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-linear z-20"
+                className="absolute transition-all duration-200 ease-linear z-20"
                 style={{ 
+                  left: `calc(50% + ${netHorizontalOffset}%)`,
+                  transform: 'translateX(-50%)',
                   top: `${10 + (netPosition * 0.65)}%`,
                   width: '40%',
                   clipPath: (() => {
@@ -318,16 +375,26 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
               <div className="text-lg font-bold text-sky-300">{currentDepth.toFixed(1)}m</div>
               <div className="text-xs text-slate-400">av {MAX_DEPTH}m</div>
             </div>
+            
+            {/* Horisontell positionsindikator */}
+            <div className="absolute top-4 right-4 bg-slate-800/80 p-2 rounded-lg">
+              <div className="text-xs text-slate-300">Horisontell Pos</div>
+              <div className="text-lg font-bold text-sky-300">{netHorizontalOffset > 0 ? '+' : ''}{netHorizontalOffset.toFixed(0)}%</div>
+              <div className="text-xs text-slate-400">från centrum</div>
+            </div>
           </div>
           
-          {/* Ner-knapp */}
+          {/* Ner-pil */}
           <div className="flex justify-center mt-4">
             <button
               onClick={() => handleManualStep('down')}
+              onMouseDown={() => setIsDownButtonActive(true)}
+              onMouseUp={() => setIsDownButtonActive(false)}
+              onMouseLeave={() => setIsDownButtonActive(false)}
               disabled={isEmergencyMode || currentDepth >= MAX_DEPTH}
-              className="w-full md:w-60 px-10 py-4 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50 text-xl"
+              className={`w-16 h-16 ${isDownButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
             >
-              <ChevronDown size={28} className="mr-2" /> Sänk Nät
+              <ChevronDown size={32} />
             </button>
           </div>
         </div>
