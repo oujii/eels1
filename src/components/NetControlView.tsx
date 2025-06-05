@@ -38,7 +38,7 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
   // Konstanter
   const MAX_DEPTH = selectedNet.maxDepth || 50; // meter
   const STEP_SIZE_BASE = 0.0625; // Halverad hastighet - ännu långsammare nedsänkning
-  const HORIZONTAL_STEP_SIZE = 2; // Horisontell stegstorlek i procent
+  const HORIZONTAL_STEP_SIZE = 0.5; // Horisontell stegstorlek i procent
   const MAX_HORIZONTAL_OFFSET = 30; // Max horisontell offset i procent
   const EMERGENCY_HOLD_TIME = 1500; // ms
   const EMERGENCY_SPEED = 10; // meter per sekund
