@@ -16,7 +16,7 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
   // State för nätposition och djup
   const [currentDepth, setCurrentDepth] = useState(5); // Börja med nätet 5 meter ner från toppen
   const [netPosition, setNetPosition] = useState(10); // Position i procent (0 = ovanför bassängen, 100 = i bassängen)
-  const [netHorizontalOffset, setNetHorizontalOffset] = useState(15); // Horisontell offset i procent från centrum (positiv = höger)
+  const [netHorizontalOffset, setNetHorizontalOffset] = useState(30); // Horisontell offset i procent från centrum (positiv = höger)
   
   // State för vinschbelastning och system
   const [winchLoad, setWinchLoad] = useState(0);
@@ -275,48 +275,48 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
         {/* MITTENPANEL - Nätvisualisering och Manövrering */}
         <div className="bg-slate-900/70 p-4 rounded-lg shadow-inner flex flex-col">
           {/* Upp-pil */}
-          <div className="flex justify-center mb-4">
-            <button
-              onClick={() => handleManualStep('up')}
-              onMouseDown={() => setIsUpButtonActive(true)}
-              onMouseUp={() => setIsUpButtonActive(false)}
-              onMouseLeave={() => setIsUpButtonActive(false)}
-              disabled={isEmergencyMode || currentDepth <= 0}
-              className={`w-16 h-16 ${isUpButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
-            >
-              <ChevronUp size={32} />
-            </button>
-          </div>
+           <div className="flex justify-center mb-4">
+             <button
+               onClick={() => handleManualStep('up')}
+               onMouseDown={() => setIsUpButtonActive(true)}
+               onMouseUp={() => setIsUpButtonActive(false)}
+               onMouseLeave={() => setIsUpButtonActive(false)}
+               disabled={isEmergencyMode || currentDepth <= 0}
+               className={`w-188 h-16 ${isUpButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
+             >
+               <ChevronUp size={32} />
+             </button>
+           </div>
           
           {/* Bassäng och nät visualisering med horisontella pilar */}
           <div className="flex-grow relative flex items-center justify-center overflow-hidden">
             {/* Vänster pil */}
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30">
-              <button
-                onClick={() => handleManualStep('left')}
-                onMouseDown={() => setIsLeftButtonActive(true)}
-                onMouseUp={() => setIsLeftButtonActive(false)}
-                onMouseLeave={() => setIsLeftButtonActive(false)}
-                disabled={isEmergencyMode || netHorizontalOffset <= -MAX_HORIZONTAL_OFFSET}
-                className={`w-16 h-16 ${isLeftButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
-              >
-                <ChevronUp size={32} className="transform -rotate-90" />
-              </button>
-            </div>
+             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30">
+               <button
+                 onClick={() => handleManualStep('left')}
+                 onMouseDown={() => setIsLeftButtonActive(true)}
+                 onMouseUp={() => setIsLeftButtonActive(false)}
+                 onMouseLeave={() => setIsLeftButtonActive(false)}
+                 disabled={isEmergencyMode || netHorizontalOffset <= -MAX_HORIZONTAL_OFFSET}
+                 className={`w-16 h-128 ${isLeftButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
+               >
+                 <ChevronUp size={32} className="transform -rotate-90" />
+               </button>
+             </div>
             
             {/* Höger pil */}
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30">
-              <button
-                onClick={() => handleManualStep('right')}
-                onMouseDown={() => setIsRightButtonActive(true)}
-                onMouseUp={() => setIsRightButtonActive(false)}
-                onMouseLeave={() => setIsRightButtonActive(false)}
-                disabled={isEmergencyMode || netHorizontalOffset >= MAX_HORIZONTAL_OFFSET}
-                className={`w-16 h-16 ${isRightButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
-              >
-                <ChevronUp size={32} className="transform rotate-90" />
-              </button>
-            </div>
+             <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30">
+               <button
+                 onClick={() => handleManualStep('right')}
+                 onMouseDown={() => setIsRightButtonActive(true)}
+                 onMouseUp={() => setIsRightButtonActive(false)}
+                 onMouseLeave={() => setIsRightButtonActive(false)}
+                 disabled={isEmergencyMode || netHorizontalOffset >= MAX_HORIZONTAL_OFFSET}
+                 className={`w-16 h-128 ${isRightButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
+               >
+                 <ChevronUp size={32} className="transform rotate-90" />
+               </button>
+             </div>
             
             <div className="relative w-full h-full max-w-md flex flex-col">
               {/* Rep/Kabel från toppen */}
@@ -385,18 +385,18 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
           </div>
           
           {/* Ner-pil */}
-          <div className="flex justify-center mt-4">
-            <button
-              onClick={() => handleManualStep('down')}
-              onMouseDown={() => setIsDownButtonActive(true)}
-              onMouseUp={() => setIsDownButtonActive(false)}
-              onMouseLeave={() => setIsDownButtonActive(false)}
-              disabled={isEmergencyMode || currentDepth >= MAX_DEPTH}
-              className={`w-16 h-16 ${isDownButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
-            >
-              <ChevronDown size={32} />
-            </button>
-          </div>
+           <div className="flex justify-center mt-4">
+             <button
+               onClick={() => handleManualStep('down')}
+               onMouseDown={() => setIsDownButtonActive(true)}
+               onMouseUp={() => setIsDownButtonActive(false)}
+               onMouseLeave={() => setIsDownButtonActive(false)}
+               disabled={isEmergencyMode || currentDepth >= MAX_DEPTH}
+               className={`w-188 h-16 ${isDownButtonActive ? 'bg-blue-600' : 'bg-slate-700'} hover:bg-slate-600 disabled:bg-slate-500 text-white rounded-lg flex items-center justify-center shadow-md transition-all duration-200 disabled:opacity-50`}
+             >
+               <ChevronDown size={32} />
+             </button>
+           </div>
         </div>
 
         {/* HÖGERPANEL - Status och Nödsystem */}
