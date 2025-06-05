@@ -205,8 +205,8 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
         <div className="bg-slate-900/70 p-4 rounded-lg shadow-inner flex flex-col">
           <h3 className="text-lg font-semibold mb-4 text-sky-200 text-center">Övrig Info</h3>
           {/* Placeholder för framtida innehåll i vänsterpanelen */}
-          <div class="flex-grow text-slate-300 text-sm space-y-3">
-              <p><span class="font-semibold text-sky-100">Senaste inspektion:</span> 2024-07-15</p>
+          <div className="flex-grow text-slate-300 text-sm space-y-3">
+            <p><span class="font-semibold text-sky-100">Senaste inspektion:</span> 2024-07-15</p>
               <p><span class="font-semibold text-sky-100">Nästa service:</span> 2024-10-01</p>
               <p><span class="font-semibold text-sky-100">Vattenkvalitet:</span> Godkänd (pH 7.2, Temp 18°C)</p>
               <p><span class="font-semibold text-sky-100">Syrenivå:</span> 95%</p>
