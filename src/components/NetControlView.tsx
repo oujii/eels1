@@ -186,7 +186,7 @@ const NetControlView: React.FC<NetControlViewProps> = ({ selectedNet, onBack }) 
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gray-800/60 backdrop-blur-lg rounded-lg shadow-2xl h-full flex flex-col text-slate-100">
+    <div className="p-4 md:p-6 bg-gray-800/60 backdrop-blur-lg rounded-lg shadow-2xl h-full flex flex-col text-slate-100 select-none" style={{userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl md:text-3xl font-bold text-sky-300">Matning: {selectedNet.name}</h2>

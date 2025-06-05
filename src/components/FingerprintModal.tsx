@@ -248,7 +248,13 @@ const FingerprintModal: React.FC<FingerprintModalProps> = ({ isOpen, onClose }) 
         modalState === 'success_reading' 
           ? 'border-blue-400 spinning-border' 
           : 'border-slate-600'
-      }`}>
+      }`}
+      style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        MozUserSelect: 'none',
+        msUserSelect: 'none'
+      }}>
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-900 to-slate-800 px-8 py-6 border-b border-slate-600">
           <div className="text-center">

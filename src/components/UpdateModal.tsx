@@ -283,7 +283,7 @@ Genom att klicka "Jag accepterar" bekräftar du att du har läst och förstått 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center select-none" style={{userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>
       {/* Professional dimmed overlay */}
       <div 
         className="absolute inset-0 backdrop-blur-sm"
