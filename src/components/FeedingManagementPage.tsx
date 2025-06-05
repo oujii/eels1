@@ -8,11 +8,11 @@ import NetControlView from './NetControlView';
 // Sample data for nets - this would likely come from an API or global state
 const initialNets: NetInfo[] = [
   { id: 'net-a', name: 'Nätstation Alfa', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 20 },
-  { id: 'net-b', name: 'Nätstation Beta', status: 'Sänkt, 50% Fyllt', depth: 10, maxDepth: 20 },
-  { id: 'net-c', name: 'Nätstation Gamma', status: 'Uppfällt, Service', depth: 0, maxDepth: 15 },
-  { id: 'net-d', name: 'Nätstation Delta', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 25 },
-  { id: 'net-e', name: 'Nätstation Epsilon', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 10 },
-  { id: 'net-f', name: 'Nätstation Zeta', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 15 },
+  { id: 'net-b', name: 'Nätstation Beta', status: 'Sänkt, 50% Fyllt', depth: 10, maxDepth: 15 },
+  { id: 'net-c', name: 'Nätstation Gamma', status: 'Uppfällt, Service', depth: 0, maxDepth: 13 },
+  { id: 'net-d', name: 'Nätstation Delta', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 12 },
+  { id: 'net-e', name: 'Nätstation Epsilon', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 11 },
+  { id: 'net-f', name: 'Nätstation Zeta', status: 'Uppfällt, Tomt', depth: 0, maxDepth: 10 },
 ];
 
 const FeedingManagementPage: React.FC = () => {
